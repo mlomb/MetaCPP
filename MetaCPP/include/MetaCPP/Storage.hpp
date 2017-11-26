@@ -1,0 +1,7 @@
+class Type {
+
+};
+
+class Storage {
+
+};
