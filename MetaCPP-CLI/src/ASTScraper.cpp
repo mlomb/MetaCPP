@@ -3,6 +3,8 @@
 #include <iostream>
 
 #include <clang/AST/RecordLayout.h>
+#include <clang/AST/DeclTemplate.h>
+#include "clang/AST/Decl.h"
 
 #include "MetaCPP/Type.hpp"
 
@@ -14,13 +16,20 @@ namespace metacpp {
 		
 	void ASTScraper::ScrapeDecl(const clang::Decl* decl)
 	{
-		decl->dump();
 		/* Types */
 		const clang::TypeDecl* typeDecl = clang::dyn_cast<clang::TypeDecl>(decl);
 		if (typeDecl) {
 			const clang::Type* type = typeDecl->getTypeForDecl();
 			if (type)
 				AddType(type);
+			else {
+				// Typedef
+				auto typedefDecl = clang::dyn_cast<clang::TypedefDecl>(decl);
+				if (typedefDecl) {
+					type = typedefDecl->getUnderlyingType().getTypePtr();
+					AddType(type);
+				}
+			}
 		}
 
 		/* Enums */
@@ -29,7 +38,12 @@ namespace metacpp {
 
 	TypeHash ASTScraper::AddType(const clang::Type* c_type)
 	{
+		if (!c_type)
+			return 0;
+
 		const std::string name = GetNameFromType(c_type);
+
+		std::cout << name << std::endl;
 
 		if (name.size() == 0)
 			return 0;
@@ -59,19 +73,34 @@ namespace metacpp {
 
 	std::string ASTScraper::GetNameFromType(const clang::Type* type)
 	{
-		auto rDecl = type->getAsCXXRecordDecl();
-
-		if (rDecl) {
-			if (rDecl->hasDefinition() && !rDecl->isImplicit() && !rDecl->isDependentType())
-				return rDecl->getName();
-		}
-		else if (type->isBuiltinType()) {
+		if (type->isBuiltinType()) {
 			auto binType = type->getAs<clang::BuiltinType>();
 			if (binType) {
 				static clang::LangOptions lang_opts;
 				static clang::PrintingPolicy printing_policy(lang_opts);
 
 				return binType->getName(printing_policy);
+			}
+		}
+		else {
+			auto rDecl = type->getAsCXXRecordDecl();
+			auto tsType = clang::dyn_cast<clang::TemplateSpecializationType>(type);
+
+			if (tsType) {
+				std::string specialized_name = std::string(rDecl->getName()) + "<";
+				clang::ArrayRef<clang::TemplateArgument> args = tsType->template_arguments();
+				for (const clang::TemplateArgument& arg : args) {
+					TypeHash arg_hash = AddType(arg.getAsType().getTypePtr());
+					if(arg_hash)
+						specialized_name += m_Storage->GetType(arg_hash)->name + ",";
+				}
+				if(tsType->getNumArgs() > 0)
+					specialized_name.pop_back();
+				return specialized_name + ">";
+			}
+			else if (rDecl) {
+				if (rDecl->hasDefinition() && !rDecl->isImplicit() && !rDecl->isDependentType())
+					return rDecl->getName();
 			}
 		}
 
