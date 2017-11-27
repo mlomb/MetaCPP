@@ -49,7 +49,7 @@ macro(meta_generate PROJECT_NAME IN_SOURCE OUT_HEADER OUT_SOURCE)
 	add_custom_command(
 		TARGET ${PROJECT_NAME}
 		PRE_BUILD
-		COMMAND call "${META_CPP_EXE}"
+		COMMAND "${META_CPP_EXE}"
 		"${IN_SOURCE_PATH}"
 		-out-header "${OUT_HEADER_PATH}"
 		-out-source "${OUT_SOURCE_PATH}"

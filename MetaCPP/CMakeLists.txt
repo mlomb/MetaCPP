@@ -1,6 +1,10 @@
 cmake_minimum_required (VERSION 2.8)
 project(MetaCPP)
 
+set (CMAKE_CXX_STANDARD 11)
+
+get_filename_component(CRCpp_INCLUDE_DIR "../Dependencies/CRCpp/inc" REALPATH BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
 set(MetaCPP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(MetaCPP_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -11,3 +15,4 @@ file(GLOB_RECURSE MetaCPP_SRC ${MetaCPP_INC_DIR}/MetaCPP/*.hpp
 add_library(MetaCPP ${MetaCPP_SRC})
 
 target_include_directories(MetaCPP PUBLIC ${MetaCPP_INC_DIR})
+target_include_directories(MetaCPP PRIVATE ${CRCpp_INCLUDE_DIR})
