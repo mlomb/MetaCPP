@@ -1,5 +1,6 @@
 #include "MetaCPP/TypeHash.hpp"
 
+#define CRCPP_USE_CPP11
 #include <CRC.h>
 
 namespace metacpp {

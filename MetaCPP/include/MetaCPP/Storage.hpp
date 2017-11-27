@@ -12,6 +12,8 @@ namespace metacpp {
 		TypeHash GetTypeID(std::string name);
 		Type* GetType(TypeHash id);
 		bool HasType(TypeHash id);
+		template<typename T>
+		Type* GetType();
 
 		void AddType(Type* type);
 

@@ -17,7 +17,7 @@ namespace metacpp {
 	
 	bool Storage::HasType(TypeHash id)
 	{
-		return m_Types.find(id) != m_Types.end();
+		return m_Types.count(id);
 	}
 
 	Type* Storage::GetType(TypeHash id)
@@ -28,4 +28,9 @@ namespace metacpp {
 		return 0;
 	}
 
+	template<typename T>
+	Type* Storage::GetType()
+	{
+		return GetType(TypeHashes<T>::Hash);
+	}
 }

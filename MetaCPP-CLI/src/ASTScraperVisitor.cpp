@@ -1,5 +1,5 @@
 #include "ASTScraperVisitor.hpp"
-
+#include <iostream>
 namespace metacpp {
 	ASTScraperVisitor::ASTScraperVisitor(clang::ASTContext* context, Storage* storage)
 		: m_Scraper(context, storage)
@@ -11,8 +11,7 @@ namespace metacpp {
 		if (!D)
 			return true;
 
-		clang::CXXRecordDecl* rDecl = clang::dyn_cast<clang::CXXRecordDecl>(D);
-		if (rDecl) m_Scraper.ScrapeRecord(rDecl);
+		m_Scraper.ScrapeDecl(D);
 
 		return clang::RecursiveASTVisitor<ASTScraperVisitor>::TraverseDecl(D);
 	}
