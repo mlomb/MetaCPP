@@ -1,8 +1,10 @@
+#include <iostream>
 #include <string>
 
 #include <llvm/Support/CommandLine.h>
 
 #include "MetaGenerator.hpp"
+#include "MetaCPP/Storage.hpp"
 
 using namespace llvm;
 
@@ -15,10 +17,13 @@ static cl::list<std::string> AdditionalFlags("flags", cl::desc("Additional compi
 int main(int argc, const char** argv) {
 	cl::ParseCommandLineOptions(argc, argv, "MetaCPP");
 
-	AdditionalFlags.push_back("-D__GENERATE_REFLECTION__");
+	//AdditionalFlags.push_back("-DTEST");
 
+	metacpp::Storage* storage = new metacpp::Storage();
 	metacpp::MetaGenerator* generator = new metacpp::MetaGenerator(InputSource, AdditionalFlags);
-	generator->Generate();
+	generator->Generate(storage);
+
+	std::cout << "OK" << std::endl;
 
 	return 0;
 }

@@ -22,3 +22,14 @@ protected:
 	char c;
 	int e, f;
 };
+
+template<typename T>
+class ExampleT {
+public:
+	ExampleT() {};
+	
+private:
+	T var;
+};
+
+typedef ExampleT<int> ExampleTSpecified;

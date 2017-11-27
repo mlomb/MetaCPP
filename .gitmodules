@@ -1,0 +1,3 @@
+[submodule "Dependencies/CRCpp"]
+	path = Dependencies/CRCpp
+	url = https://github.com/d-bahr/CRCpp.git
