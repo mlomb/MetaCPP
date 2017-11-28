@@ -36,42 +36,47 @@ namespace metacpp {
 		// TODO
 	}
 
-	TypeHash ASTScraper::AddType(const clang::Type* c_type)
+	TypeID ASTScraper::AddType(const clang::Type* c_type)
 	{
-		if (!c_type)
+		// We can only scrape complete types
+		if (!c_type || c_type->isIncompleteType())
 			return 0;
 
-		const std::string name = GetNameFromType(c_type);
+		// If it its an elaborated type, we scrape the underlying type
+		auto elType = clang::dyn_cast<clang::ElaboratedType>(c_type);
+		if (elType)
+			return AddType(elType->getNamedType().getTypePtr());
 
-		std::cout << name << std::endl;
+		// <fullName, name>
+		auto& names = GetNameFromType(c_type);
 
-		if (name.size() == 0)
+		if (names.first.size() == 0)
 			return 0;
 
-		const TypeHash type_hash = HashFromString(name);
-
-		if (m_Storage->HasType(type_hash))
-			return type_hash;
+		TypeID typeId = m_Storage->assignTypeID(names.first);
 		
-		Type* type = new Type(type_hash);
+		// Have we already scraped this type?
+		if (m_Storage->hasType(typeId))
+			return typeId;
+		
+		Type* type = new Type(typeId, names.first, names.second);
 
-		type->name = name;
-		type->size_bytes = m_Context->getTypeSize(c_type) / 8;
+		type->setSize(m_Context->getTypeSize(c_type) / 8);
 
 		auto rDecl = c_type->getAsCXXRecordDecl();
-		if (rDecl)
-			ScrapeRecord(type, rDecl);
-		else { // primitive
-			type->is_primitive = true;
-
+		if (rDecl) {
+			ScrapeRecord(rDecl, type);
+		}
+		else {
+			type->setKind(TypeKind::PRIMITIVE);
 		}
 
-		m_Storage->AddType(type);
+		m_Storage->addType(type);
 
-		return type_hash;
+		return typeId;
 	}
 
-	std::string ASTScraper::GetNameFromType(const clang::Type* type)
+	std::pair<std::string, std::string> ASTScraper::GetNameFromType(const clang::Type* type)
 	{
 		if (type->isBuiltinType()) {
 			auto binType = type->getAs<clang::BuiltinType>();
@@ -79,65 +84,72 @@ namespace metacpp {
 				static clang::LangOptions lang_opts;
 				static clang::PrintingPolicy printing_policy(lang_opts);
 
-				return binType->getName(printing_policy);
+				std::string name = binType->getName(printing_policy);
+				return std::make_pair(name, name);
 			}
 		}
 		else {
 			auto rDecl = type->getAsCXXRecordDecl();
 			auto tsType = clang::dyn_cast<clang::TemplateSpecializationType>(type);
-
+			
 			if (tsType) {
-				std::string specialized_name = std::string(rDecl->getName()) + "<";
+				std::string specialized_args = "<";
 				clang::ArrayRef<clang::TemplateArgument> args = tsType->template_arguments();
 				for (const clang::TemplateArgument& arg : args) {
-					TypeHash arg_hash = AddType(arg.getAsType().getTypePtr());
+					TypeID arg_hash = AddType(arg.getAsType().getTypePtr());
 					if(arg_hash)
-						specialized_name += m_Storage->GetType(arg_hash)->name + ",";
+						specialized_args += m_Storage->getType(arg_hash)->getFullName() + ",";
 				}
 				if(tsType->getNumArgs() > 0)
-					specialized_name.pop_back();
-				return specialized_name + ">";
+					specialized_args.pop_back();
+				specialized_args += ">";
+
+				return std::make_pair(rDecl->getQualifiedNameAsString() + specialized_args, rDecl->getNameAsString() + specialized_args);
 			}
 			else if (rDecl) {
 				if (rDecl->hasDefinition() && !rDecl->isImplicit() && !rDecl->isDependentType())
-					return rDecl->getName();
+					return std::make_pair(rDecl->getQualifiedNameAsString(), rDecl->getNameAsString());
 			}
 		}
 
-		return "";
+		return std::make_pair("", "");
 	}
 
-	void ASTScraper::ScrapeRecord(Type* type, const clang::CXXRecordDecl* rDecl)
+	void ASTScraper::ScrapeRecord(const clang::CXXRecordDecl* rDecl, Type* type)
 	{
-		type->is_primitive = false;
-		type->is_struct = rDecl->isStruct();
-		/* Fields information */
+		type->setKind(rDecl->isStruct() ? TypeKind::STRUCT : TypeKind::CLASS);
+
+		/* Fields */
 		for (auto it = rDecl->field_begin(); it != rDecl->field_end(); it++) {
 			clang::FieldDecl* fieldDecl = *it;
 			if (fieldDecl) {
-				Field* field = ScrapeField(fieldDecl);
-				if (field) {
-					field->owner_type = type->id;
-					type->fields.push_back(field);
-				}
+				FieldID fieldId = ScrapeField(fieldDecl, type);
+				if(fieldId != 0)
+					type->addField(fieldId);
 			}
 		}
 	}
 
-	Field* ASTScraper::ScrapeField(const clang::FieldDecl* fDecl)
+	FieldID ASTScraper::ScrapeField(const clang::FieldDecl* fDecl, const Type* owner)
 	{
-		clang::QualType field_qual_type = fDecl->getType();
-		const clang::Type* c_type = field_qual_type.getTypePtr();
+		clang::QualType qualType = fDecl->getType();
+		const clang::Type* c_type = qualType.getTypePtr();
 
-		TypeHash type_hash = AddType(c_type);
-		if (!type_hash)
+		TypeID typeId = AddType(c_type);
+		if (!typeId)
 			return 0; // NULL
 
-		Field* field = new Field();
+		std::string name = fDecl->getNameAsString();
+		std::string fullName = owner->getFullName() + "::" + name;
+		FieldID fieldId = m_Storage->assignFieldID(fullName);
 
-		field->type = type_hash;
-		field->name = fDecl->getNameAsString();
+		Field* field = new Field(fieldId, typeId, owner->getID(), fullName, name);
 
-		return field;
+		unsigned int offset_bytes = m_Context->getFieldOffset(fDecl) / 8;
+		field->setOffset(offset_bytes);
+
+		m_Storage->addField(field);
+
+		return fieldId;
 	}
 }

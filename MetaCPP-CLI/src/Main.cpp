@@ -14,6 +14,10 @@ static cl::opt<std::string> OutputSource("out-source", cl::desc("Specify source 
 
 static cl::list<std::string> AdditionalFlags("flags", cl::desc("Additional compiler flags"), cl::value_desc("flags"));
 
+namespace N3 {
+	class Specified2;
+}
+
 int main(int argc, const char** argv) {
 	cl::ParseCommandLineOptions(argc, argv, "MetaCPP");
 
@@ -23,7 +27,9 @@ int main(int argc, const char** argv) {
 	metacpp::MetaGenerator* generator = new metacpp::MetaGenerator(InputSource, AdditionalFlags);
 	generator->Generate(storage);
 
-	std::cout << "OK" << std::endl;
+	storage->dump();
+
+	std::cout << "OK " << std::endl;
 
 	return 0;
 }

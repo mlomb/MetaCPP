@@ -3,23 +3,46 @@
 
 #include <vector>
 
-#include "TypeHash.hpp"
+#include "IDs.hpp"
 #include "Field.hpp"
 //#include "Method.hpp"
+#include "Dumpeable.hpp"
 
 namespace metacpp {
-	class Type {
+	enum TypeKind {
+		PRIMITIVE,
+		CLASS,
+		STRUCT
+	};
+
+	class Type : public Dumpeable {
 	public:
-		Type(TypeHash hash) : id(hash) {  }
+		Type(const TypeID id, const std::string& fullName, const std::string& name);
 
-		const TypeHash id;
-		std::string name;
-		unsigned int size_bytes;
-		bool is_struct;
-		bool is_primitive;
+		TypeID getID() const;
+		std::string getName() const;
+		std::string getFullName() const;
+		TypeKind getKind() const;
+		bool isPrimitive() const;
+		bool isStruct() const;
+		bool isClass() const;
 
-		std::vector<Field*> fields;
-		//std::vector<Method*> methods;
+		void setKind(const TypeKind kind);
+		void setSize(const unsigned int bytes);
+
+		void addField(const FieldID field);
+		void addMethod(const MethodID method);
+
+	private:
+		const TypeID m_ID;
+		const std::string m_Name, m_FullName;
+		unsigned int m_SizeInBytes = -1;
+		TypeKind m_Kind = PRIMITIVE;
+
+		std::vector<FieldID> m_Fields;
+		std::vector<MethodID> m_Methods;
+
+		void dump_obj(std::ostream& o) override;
 	};
 }
 

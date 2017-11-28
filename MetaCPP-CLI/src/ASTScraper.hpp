@@ -8,14 +8,14 @@ namespace metacpp {
 	public:
 		ASTScraper(clang::ASTContext* context, Storage* storage);
 
-		std::string GetNameFromType(const clang::Type* type);
+		std::pair<std::string, std::string> GetNameFromType(const clang::Type* type);
 
-		TypeHash AddType(const clang::Type* type);
+		TypeID AddType(const clang::Type* type);
 
 		void ScrapeDecl(const clang::Decl* decl);
-		void ScrapeRecord(Type* type, const clang::CXXRecordDecl* rDecl);
-		Field* ScrapeField(const clang::FieldDecl* fDecl);
-		
+		void ScrapeRecord(const clang::CXXRecordDecl* rDecl, Type* type);
+		FieldID ScrapeField(const clang::FieldDecl* fDecl, const Type* owner);
+
 	private:
 		clang::ASTContext* m_Context;
 		Storage* m_Storage;
