@@ -1,6 +1,6 @@
-#include "Type.hpp"
+#include "MetaCPP/Type.hpp"
 
-#include "Storage.hpp"
+#include "MetaCPP/Storage.hpp"
 
 namespace metacpp {
 	Type::Type(const TypeID id, const std::string& fullName, const std::string& name)
@@ -12,7 +12,7 @@ namespace metacpp {
 
 	void Type::dump_obj(std::ostream& o)
 	{
-		o << indentation << m_Name << std::endl;
+		o << indentation << m_FullName << std::endl;
 		indent();
 		{
 			o << indentation << "id=" << m_ID << std::endl;

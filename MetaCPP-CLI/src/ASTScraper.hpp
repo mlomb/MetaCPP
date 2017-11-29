@@ -13,6 +13,8 @@ namespace metacpp {
 		TypeID AddType(const clang::Type* type);
 
 		void ScrapeDecl(const clang::Decl* decl);
+		TypeID ScrapeTypeDecl(const clang::TypeDecl* typeDecl);
+
 		void ScrapeRecord(const clang::CXXRecordDecl* rDecl, Type* type);
 		FieldID ScrapeField(const clang::FieldDecl* fDecl, const Type* owner);
 

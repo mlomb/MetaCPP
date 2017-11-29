@@ -12,11 +12,7 @@ static cl::list<std::string> InputSource(cl::Positional, cl::Required, "in-sourc
 static cl::opt<std::string> OutputHeader("out-header", cl::desc("Specify header output filename"), cl::value_desc("filename"), cl::init("output.hpp"));
 static cl::opt<std::string> OutputSource("out-source", cl::desc("Specify source output filename"), cl::value_desc("filename"), cl::init("output.cpp"));
 
-static cl::list<std::string> AdditionalFlags("flags", cl::desc("Additional compiler flags"), cl::value_desc("flags"));
-
-namespace N3 {
-	class Specified2;
-}
+static cl::list<std::string> AdditionalFlags("flag", cl::desc("Additional compiler flag"), cl::value_desc("flags"), cl::ZeroOrMore);
 
 int main(int argc, const char** argv) {
 	cl::ParseCommandLineOptions(argc, argv, "MetaCPP");
@@ -24,12 +20,13 @@ int main(int argc, const char** argv) {
 	//AdditionalFlags.push_back("-DTEST");
 
 	metacpp::Storage* storage = new metacpp::Storage();
+
 	metacpp::MetaGenerator* generator = new metacpp::MetaGenerator(InputSource, AdditionalFlags);
 	generator->Generate(storage);
 
 	storage->dump();
 
-	std::cout << "OK " << std::endl;
+	std::cout << "OK" << std::endl;
 
-	return 0;
+	return 1;
 }

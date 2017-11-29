@@ -49,25 +49,27 @@ namespace metacpp {
 		return static_cast<Field*>(get(IDTypes::FIELD, fieldId));
 	}
 
-	ID Storage::assignID(const IDTypes idType, const std::string& name)
+	ID Storage::assignID(const IDTypes idType, const std::string& name, const ID id)
 	{
-		ID id = getID(idType, name);
-		if (id != 0)
-			return id;
+		ID _id = getID(idType, name);
+		if (_id != 0 && (id == 0 || _id == id))
+			return _id;
 
-		id = m_NextID++;
-		m_IDs[idType].insert(std::make_pair(name, id));
-		return id;
+		_id = id;
+		if(id == 0)
+			_id = m_NextID++;
+		m_IDs[idType].insert(std::make_pair(name, _id));
+		return _id;
 	}
 
-	TypeID Storage::assignTypeID(const std::string& name)
+	TypeID Storage::assignTypeID(const std::string& name, const TypeID typeId)
 	{
-		return assignID(IDTypes::TYPE, name);
+		return assignID(IDTypes::TYPE, name, typeId);
 	}
 
-	FieldID Storage::assignFieldID(const std::string& name)
+	FieldID Storage::assignFieldID(const std::string& name, const FieldID fieldId)
 	{
-		return assignID(IDTypes::FIELD, name);
+		return assignID(IDTypes::FIELD, name, fieldId);
 	}
 
 	void Storage::add(const IDTypes idType, const ID id, void* ptr)
@@ -106,8 +108,28 @@ namespace metacpp {
 		o << indentation << "Storage:" << std::endl;
 		indent();
 		{
+			// IDs
+			o << indentation << "IDs:" << std::endl;
+			indent();
+			{
+				for (int i = IDTypes::TYPE; i < IDTypes::METHOD + 1; i++) {
+					IDTypes idType = static_cast<IDTypes>(i);
+					o << indentation << IDTypes_Names[idType] << ":" << std::endl;
+
+					indent();
+					{
+						auto& ids = m_IDs[idType];
+						for (auto& kv : ids)
+							o << indentation << kv.second << "=" << kv.first << std::endl;
+					}
+					deindent();
+				}
+			}
+			deindent();
+
+			// Types
 			auto& types = m_Objects[IDTypes::TYPE];
-			o << indentation << "Types (" << types.size() << "):" << std::endl;
+			o << indentation << IDTypes_Names[IDTypes::TYPE] << " (" << types.size() << "):" << std::endl;
 			indent();
 			{
 				for (auto& kv : types)

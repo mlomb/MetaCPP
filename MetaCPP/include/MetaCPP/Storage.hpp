@@ -20,9 +20,9 @@ namespace metacpp {
 		Type* getType(const TypeID typeId) const;
 		Field* getField(const FieldID fieldId) const;
 
-		ID assignID(const IDTypes idType, const std::string& name);
-		TypeID assignTypeID(const std::string& name);
-		FieldID assignFieldID(const std::string& name);
+		ID assignID(const IDTypes idType, const std::string& name, const ID id = 0);
+		TypeID assignTypeID(const std::string& name, const TypeID typeId = 0);
+		FieldID assignFieldID(const std::string& name, const FieldID fieldId = 0);
 
 		void add(const IDTypes idType, const ID id, void* ptr);
 		void addType(Type* type);

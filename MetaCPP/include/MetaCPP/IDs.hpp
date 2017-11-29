@@ -11,6 +11,7 @@ namespace metacpp {
 	typedef ID MethodID;
 
 	enum IDTypes { TYPE = 0, FIELD, METHOD };
+	const std::string IDTypes_Names[]{ "Types", "Fields", "Methods" };
 
 	template<typename T>
 	struct TypeIDs {

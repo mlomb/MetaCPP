@@ -23,7 +23,7 @@ macro(meta_generate PROJECT_NAME IN_SOURCE OUT_HEADER OUT_SOURCE)
 	message("  Included directories:")
 	foreach (DIRECTORY ${INC_DIRECTORIES})
 		message("   - ${DIRECTORY}")
-		set(FLAGS ${FLAGS} "\\-I${DIRECTORY}")
+		set(FLAGS "${FLAGS} --flag \"-I${DIRECTORY}\"")
 	endforeach ()
 	
 	# get the absolute path to the files
@@ -53,7 +53,7 @@ macro(meta_generate PROJECT_NAME IN_SOURCE OUT_HEADER OUT_SOURCE)
 		"${IN_SOURCE_PATH}"
 		-out-header "${OUT_HEADER_PATH}"
 		-out-source "${OUT_SOURCE_PATH}"
-		-flags "${FLAGS}"
+		"${FLAGS}"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 	)
 endmacro()

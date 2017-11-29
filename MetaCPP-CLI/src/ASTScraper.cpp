@@ -18,35 +18,54 @@ namespace metacpp {
 	{
 		/* Types */
 		const clang::TypeDecl* typeDecl = clang::dyn_cast<clang::TypeDecl>(decl);
-		if (typeDecl) {
-			const clang::Type* type = typeDecl->getTypeForDecl();
-			if (type)
-				AddType(type);
-			else {
-				// Typedef
-				auto typedefDecl = clang::dyn_cast<clang::TypedefDecl>(decl);
-				if (typedefDecl) {
-					type = typedefDecl->getUnderlyingType().getTypePtr();
-					AddType(type);
-				}
-			}
-		}
+		if (typeDecl)
+			ScrapeTypeDecl(typeDecl);
 
 		/* Enums */
 		// TODO
 	}
 
+	TypeID ASTScraper::ScrapeTypeDecl(const clang::TypeDecl* typeDecl)
+	{
+		if (!typeDecl)
+			return 0;
+
+		
+		auto typedefDecl = clang::dyn_cast<clang::TypedefDecl>(typeDecl);
+		if (typedefDecl) {
+			TypeID id = AddType(typedefDecl->getUnderlyingType().getTypePtr());
+			if (id)
+				m_Storage->assignTypeID(typedefDecl->getQualifiedNameAsString(), id);
+			return id;
+		}
+
+		const clang::Type* type = typeDecl->getTypeForDecl();
+		if (type)
+			return AddType(type);
+
+		return 0;
+	}
+
 	TypeID ASTScraper::AddType(const clang::Type* c_type)
 	{
 		// We can only scrape complete types
+		// TODO Investigate why
+		//		typedef A<T> B;
+		// if A<T> is not used elsewhere
+		// is considered an incomplete type
 		if (!c_type || c_type->isIncompleteType())
 			return 0;
-
+		
 		// If it its an elaborated type, we scrape the underlying type
 		auto elType = clang::dyn_cast<clang::ElaboratedType>(c_type);
 		if (elType)
 			return AddType(elType->getNamedType().getTypePtr());
 
+		// If it is a typedef
+		auto typedefType = clang::dyn_cast<clang::TypedefType>(c_type);
+		if (typedefType)
+			return ScrapeTypeDecl(typedefType->getDecl());
+		
 		// <fullName, name>
 		auto& names = GetNameFromType(c_type);
 
@@ -78,8 +97,11 @@ namespace metacpp {
 
 	std::pair<std::string, std::string> ASTScraper::GetNameFromType(const clang::Type* type)
 	{
+		auto rDecl = type->getAsCXXRecordDecl();
+		auto binType = type->getAs<clang::BuiltinType>();
+		auto tsType = clang::dyn_cast<clang::TemplateSpecializationType>(type);
+
 		if (type->isBuiltinType()) {
-			auto binType = type->getAs<clang::BuiltinType>();
 			if (binType) {
 				static clang::LangOptions lang_opts;
 				static clang::PrintingPolicy printing_policy(lang_opts);
@@ -88,29 +110,28 @@ namespace metacpp {
 				return std::make_pair(name, name);
 			}
 		}
-		else {
-			auto rDecl = type->getAsCXXRecordDecl();
-			auto tsType = clang::dyn_cast<clang::TemplateSpecializationType>(type);
-			
+		else if (rDecl) {
+			std::string fullName = rDecl->getQualifiedNameAsString();
+			std::string name = rDecl->getNameAsString();
+
 			if (tsType) {
 				std::string specialized_args = "<";
 				clang::ArrayRef<clang::TemplateArgument> args = tsType->template_arguments();
 				for (const clang::TemplateArgument& arg : args) {
 					TypeID arg_hash = AddType(arg.getAsType().getTypePtr());
-					if(arg_hash)
+					if (arg_hash)
 						specialized_args += m_Storage->getType(arg_hash)->getFullName() + ",";
 				}
-				if(tsType->getNumArgs() > 0)
+				if (tsType->getNumArgs() > 0)
 					specialized_args.pop_back();
 				specialized_args += ">";
 
-				return std::make_pair(rDecl->getQualifiedNameAsString() + specialized_args, rDecl->getNameAsString() + specialized_args);
+				return std::make_pair(fullName + specialized_args, name + specialized_args);
 			}
-			else if (rDecl) {
-				if (rDecl->hasDefinition() && !rDecl->isImplicit() && !rDecl->isDependentType())
-					return std::make_pair(rDecl->getQualifiedNameAsString(), rDecl->getNameAsString());
-			}
+			else if (rDecl->hasDefinition() && !rDecl->isImplicit() && !rDecl->isDependentType())
+				return std::make_pair(fullName, name);
 		}
+
 
 		return std::make_pair("", "");
 	}
