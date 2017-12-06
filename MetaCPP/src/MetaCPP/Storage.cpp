@@ -3,148 +3,82 @@
 #include <iostream>
 #include <algorithm>
 
+#include "MetaCPP/Templates.hpp"
+
 namespace metacpp {
 
 	Storage::Storage() {
-		for (int i = IDTypes::TYPE; i < IDTypes::METHOD + 1; i++) {
-			IDTypes idType = static_cast<IDTypes>(i);
-			m_IDs[idType];
-			m_Objects[idType];
-		}
-
-		dump_storage = this;
+		dumping_storage = this;
 	}
 
-	ID Storage::getID(const IDTypes idType, const std::string& name)
+	TypeID Storage::getTypeID(const std::string& name) const
 	{
-		auto& ids_map = m_IDs[idType];
-		auto it = ids_map.find(name);
-		return it != ids_map.end() ? (*it).second : 0;
-	}
-
-	TypeID Storage::getTypeID(const std::string& name)
-	{
-		return getID(IDTypes::TYPE, name);
-	}
-
-	FieldID Storage::getFieldID(const std::string& name)
-	{
-		return getID(IDTypes::FIELD, name);
-	}
-
-	void* Storage::get(const IDTypes idType, const ID id) const
-	{
-		auto& objs_map = (*m_Objects.find(idType)).second;
-		auto it = objs_map.find(id);
-		return it != objs_map.end() ? (*it).second : nullptr;
+		auto it = m_IDs.find(name);
+		return it != m_IDs.end() ? (*it).second : 0;
 	}
 
 	Type* Storage::getType(const TypeID typeId) const
 	{
-		return static_cast<Type*>(get(IDTypes::TYPE, typeId));
+		auto it = m_Types.find(typeId);
+		return it != m_Types.end() ? (*it).second : nullptr;
 	}
 
-	Field* Storage::getField(const FieldID fieldId) const
+	Type* Storage::getType(const std::string& name) const
 	{
-		return static_cast<Field*>(get(IDTypes::FIELD, fieldId));
-	}
-
-	ID Storage::assignID(const IDTypes idType, const std::string& name, const ID id)
-	{
-		ID _id = getID(idType, name);
-		if (_id != 0 && (id == 0 || _id == id))
-			return _id;
-
-		_id = id;
-		if(id == 0)
-			_id = m_NextID++;
-		m_IDs[idType].insert(std::make_pair(name, _id));
-		return _id;
+		return getType(getTypeID(name));
 	}
 
 	TypeID Storage::assignTypeID(const std::string& name, const TypeID typeId)
 	{
-		return assignID(IDTypes::TYPE, name, typeId);
-	}
+		TypeID _id = getTypeID(name);
+		if (_id != 0 && (typeId == 0 || _id == typeId))
+			return _id;
 
-	FieldID Storage::assignFieldID(const std::string& name, const FieldID fieldId)
-	{
-		return assignID(IDTypes::FIELD, name, fieldId);
-	}
-
-	void Storage::add(const IDTypes idType, const ID id, void* ptr)
-	{
-		m_Objects[idType].insert(std::pair<ID, void*>(id, ptr));
+		_id = typeId;
+		if (typeId == 0)
+			_id = m_NextID++;
+		else
+			m_NextID = std::max(m_NextID, _id) + 1;
+		m_IDs.insert(std::make_pair(name, _id));
+		return _id;
 	}
 
 	void Storage::addType(Type* type)
 	{
-		add(IDTypes::TYPE, type->getID(), type);
-	}
-
-	void Storage::addField(Field* field)
-	{
-		add(IDTypes::FIELD, field->getID(), field);
-	}
-
-	bool Storage::has(const IDTypes idType, const ID id) const
-	{
-		auto& objs_map = (*m_Objects.find(idType)).second;
-		return objs_map.count(id);
+		m_Types.insert(std::make_pair(type->getID(), type));
 	}
 
 	bool Storage::hasType(const TypeID typeId) const
 	{
-		return has(IDTypes::TYPE, typeId);
+		return m_Types.count(typeId);
 	}
 
-	bool Storage::hasField(const FieldID fieldId) const
+	mustache::data Storage::asMustache() const
 	{
-		return has(IDTypes::FIELD, fieldId);
-	}
+		mustache::data data;
 
-	void Storage::dump_obj(std::ostream& o)
-	{
-		o << indentation << "Storage:" << std::endl;
-		indent();
-		{
-			// IDs
-			o << indentation << "IDs:" << std::endl;
-			indent();
-			{
-				for (int i = IDTypes::TYPE; i < IDTypes::METHOD + 1; i++) {
-					IDTypes idType = static_cast<IDTypes>(i);
-					o << indentation << IDTypes_Names[idType] << ":" << std::endl;
-
-					indent();
-					{
-						auto& ids = m_IDs[idType];
-						for (auto& kv : ids)
-							o << indentation << kv.second << "=" << kv.first << std::endl;
-					}
-					deindent();
-				}
-			}
-			deindent();
-
-			// Types
-			auto& types = m_Objects[IDTypes::TYPE];
-			o << indentation << IDTypes_Names[IDTypes::TYPE] << " (" << types.size() << "):" << std::endl;
-			indent();
-			{
-				for (auto& kv : types)
-					static_cast<Type*>(kv.second)->dump(o);
-			}
-			deindent();
+		// IDs
+		mustache::data ids{ mustache::data::type::list };
+		for (const auto& kv : m_IDs) {
+			mustache::data entry;
+			entry["id"] = std::to_string(kv.second);
+			entry["qualifiedName"] = kv.first;
+			ids << entry;
 		}
-		deindent();
+		data["ids"] = mustache::data{ ids };
+
+		// Types
+		mustache::data types{ mustache::data::type::list };
+		for (const auto& kv : m_Types)
+			types << kv.second->asMustache();
+		data["types"] = mustache::data{ types };
+
+		return data;
 	}
 
-	/*
-	template<typename T>
-	Type* Storage::getType()
+	std::string Storage::dumpTemplate()
 	{
-	return getType(TypeIDs<T>::ID);
+		dumping_storage = this;
+		return templates::dump_storage;
 	}
-	*/
 }

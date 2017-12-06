@@ -5,14 +5,14 @@ set (CMAKE_CXX_STANDARD 11)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../CMake")
 
+add_subdirectory(../MetaCPP MetaCPP)
+
 find_package(LLVM REQUIRED)
 find_Package(Clang REQUIRED)
 
 # LLVM
 link_directories(${LLVM_LIB_DIR})
 add_definitions(${LLVM_COMPILE_FLAGS})
-
-add_subdirectory(../MetaCPP MetaCPP)
 
 set(MetaCPPCLI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 file(GLOB_RECURSE MetaCPPCLI_SRC ${MetaCPPCLI_SRC_DIR}/*.hpp

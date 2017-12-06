@@ -1,0 +1,9 @@
+R"(
+				QualifiedType* qualifiedType = 0;
+				{{#typeID}}
+				qualifiedType = new QualifiedType();
+				qualifiedType->setTypeID({{typeID}});
+				qualifiedType->setConst({{const}});
+				qualifiedType->setQualifierOperator(static_cast<QualifierOperator>({{operator}}));
+				{{/typeID}}
+)"

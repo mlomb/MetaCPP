@@ -9,168 +9,288 @@
 #include "MetaCPP/Type.hpp"
 
 namespace metacpp {
-	ASTScraper::ASTScraper(clang::ASTContext* context, Storage* storage)
-		: m_Context(context), m_Storage(storage)
+	ASTScraper::ASTScraper(Storage* storage, const Configuration& config)
+		: m_Config(config), m_Storage(storage)
 	{
 	}
-		
-	void ASTScraper::ScrapeDecl(const clang::Decl* decl)
-	{
-		/* Types */
-		const clang::TypeDecl* typeDecl = clang::dyn_cast<clang::TypeDecl>(decl);
-		if (typeDecl)
-			ScrapeTypeDecl(typeDecl);
 
-		/* Enums */
-		// TODO
+	void ASTScraper::ScrapeTranslationUnit(const clang::TranslationUnitDecl* tuDecl)
+	{
+		ScrapeDeclContext(tuDecl, nullptr);
 	}
 
-	TypeID ASTScraper::ScrapeTypeDecl(const clang::TypeDecl* typeDecl)
+	void ASTScraper::ScrapeDeclContext(const clang::DeclContext* ctxDecl, Type* parent)
 	{
-		if (!typeDecl)
+		for (clang::DeclContext::decl_iterator it = ctxDecl->decls_begin(); it != ctxDecl->decls_end(); ++it)
+		{
+			const clang::Decl* decl = *it;
+			if (decl->isInvalidDecl())
+				continue;
+
+			auto namedDecl = clang::dyn_cast<clang::NamedDecl>(decl);
+			if (namedDecl)
+				ScrapeNamedDecl(namedDecl, parent);
+		}
+	}
+
+	void ASTScraper::ScrapeNamedDecl(const clang::NamedDecl* namedDecl, Type* parent)
+	{
+		clang::Decl::Kind kind = namedDecl->getKind();
+		switch (kind) {
+		case clang::Decl::Kind::ClassTemplate:
+		case clang::Decl::Kind::CXXConstructor:
+		case clang::Decl::Kind::CXXDestructor:
+		case clang::Decl::Kind::CXXMethod:
+		default:
+		{
+			// Unhandled
+			//std::string qualifiedName = namedDecl->getQualifiedNameAsString();
+			//std::cout << "Unhandled! " << namedDecl->getDeclKindName() << ": " << qualifiedName << std::endl;
+			break;
+		}
+		case clang::Decl::Kind::Namespace:
+			ScrapeDeclContext(namedDecl->castToDeclContext(namedDecl), parent);
+			break;
+		case clang::Decl::Kind::CXXRecord:
+			ScrapeCXXRecordDecl(clang::dyn_cast<clang::CXXRecordDecl>(namedDecl), parent);
+			break;
+		case clang::Decl::Kind::Field:
+			ScrapeFieldDecl(clang::dyn_cast<clang::FieldDecl>(namedDecl), parent);
+			break;
+		}
+	}
+
+	Type* ASTScraper::ScrapeCXXRecordDecl(const clang::CXXRecordDecl* cxxRecordDecl, Type* parent)
+	{
+		if (cxxRecordDecl->isAnonymousStructOrUnion()) {
+			ScrapeDeclContext(cxxRecordDecl, parent);
 			return 0;
-
-		
-		auto typedefDecl = clang::dyn_cast<clang::TypedefDecl>(typeDecl);
-		if (typedefDecl) {
-			TypeID id = AddType(typedefDecl->getUnderlyingType().getTypePtr());
-			if (id)
-				m_Storage->assignTypeID(typedefDecl->getQualifiedNameAsString(), id);
-			return id;
 		}
 
-		const clang::Type* type = typeDecl->getTypeForDecl();
+		const clang::Type* cType = cxxRecordDecl->getTypeForDecl();
+		metacpp::Type* type = ScrapeType(cType);
+
 		if (type)
-			return AddType(type);
+			type->setAccess(TransformAccess(cxxRecordDecl->getAccess()));
 
-		return 0;
+		return type;
 	}
 
-	TypeID ASTScraper::AddType(const clang::Type* c_type)
+	std::vector<QualifiedType*> ASTScraper::ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName)
 	{
-		// We can only scrape complete types
-		// TODO Investigate why
-		//		typedef A<T> B;
-		// if A<T> is not used elsewhere
-		// is considered an incomplete type
-		if (!c_type || c_type->isIncompleteType())
+		std::string typeName = cxxRecordDecl->getQualifiedNameAsString();
+		std::vector<QualifiedType*> templateArgs;
+
+		// Template arguments
+		auto templateDecl = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(cxxRecordDecl);
+		if (templateDecl) {
+			typeName += "<";
+
+			const clang::TemplateArgumentList& args = templateDecl->getTemplateArgs();
+
+			for (int i = 0; i < args.size(); i++) {
+				const clang::TemplateArgument& arg = args[i];
+				if (i)
+					typeName += ",";
+
+				QualifiedType* qualifiedType = 0;
+				switch (arg.getKind()) {
+					case clang::TemplateArgument::Type:
+						qualifiedType = ResolveQualType(arg.getAsType());
+						break;
+					default:
+						std::cout << "Unsupported template argument!" << std::endl;
+						break;
+				}
+
+				if (qualifiedType)
+					typeName += qualifiedType->getQualifiedName(m_Storage);
+				else
+					typeName += "INVALID";
+
+				templateArgs.push_back(qualifiedType);
+			}
+
+			typeName += ">";
+		}
+
+		qualifiedName = ResolveQualifiedName(typeName);
+
+		return templateArgs;
+	}
+
+	Type* ASTScraper::ScrapeType(const clang::Type* cType)
+	{
+		QualifiedName qualifiedName;
+		metacpp::TypeKind kind;
+		std::vector<QualifiedType*> templateArgs;
+
+		switch (cType->getTypeClass()) {
+		case clang::Type::TypeClass::Builtin:
+		{
+			static clang::LangOptions lang_opts;
+			static clang::PrintingPolicy printing_policy(lang_opts);
+
+			auto builtin = cType->getAs<clang::BuiltinType>();
+			std::string name = builtin->getName(printing_policy);
+			if (name == "_Bool")
+				name = "bool";
+			qualifiedName = QualifiedName({}, name);
+			kind = metacpp::TypeKind::PRIMITIVE;
+			break;
+		}
+		case clang::Type::TypeClass::Record:
+		{
+			auto cxxRecordDecl = cType->getAsCXXRecordDecl();
+			if (cxxRecordDecl->isThisDeclarationADefinition() == clang::VarDecl::DeclarationOnly)
+				return 0; // forward declaration
+			templateArgs = ResolveCXXRecordTemplate(cxxRecordDecl, qualifiedName);
+			kind = cType->isStructureType() ? metacpp::TypeKind::STRUCT : metacpp::TypeKind::CLASS;
+			break;
+		}
+		default:
+			std::cout << "Unsupported TypeClass " << cType->getTypeClassName() << std::endl;
 			return 0;
+		}
 		
-		// If it its an elaborated type, we scrape the underlying type
-		auto elType = clang::dyn_cast<clang::ElaboratedType>(c_type);
-		if (elType)
-			return AddType(elType->getNamedType().getTypePtr());
+		TypeID typeId = m_Storage->assignTypeID(qualifiedName.fullQualified());
 
-		// If it is a typedef
-		auto typedefType = clang::dyn_cast<clang::TypedefType>(c_type);
-		if (typedefType)
-			return ScrapeTypeDecl(typedefType->getDecl());
-		
-		// <fullName, name>
-		auto& names = GetNameFromType(c_type);
-
-		if (names.first.size() == 0)
-			return 0;
-
-		TypeID typeId = m_Storage->assignTypeID(names.first);
-		
-		// Have we already scraped this type?
 		if (m_Storage->hasType(typeId))
-			return typeId;
+			return m_Storage->getType(typeId);
+
+		metacpp::Type* type = new metacpp::Type(typeId, qualifiedName);
 		
-		Type* type = new Type(typeId, names.first, names.second);
+		type->setSize(m_Context->getTypeSize(cType) / 8);
+		type->setKind(kind);
 
-		type->setSize(m_Context->getTypeSize(c_type) / 8);
+		if (auto cxxRecordDecl = cType->getAsCXXRecordDecl()) {
+			// Parse base classes
+			for (auto it = cxxRecordDecl->bases_begin(); it != cxxRecordDecl->bases_end(); it++)
+			{
+				type->addBaseType(ResolveQualType(it->getType()), TransformAccess(it->getAccessSpecifier()));
+			}
 
-		auto rDecl = c_type->getAsCXXRecordDecl();
-		if (rDecl) {
-			ScrapeRecord(rDecl, type);
+			// Scrape annotations
+			std::vector<std::string> annotations = ScrapeAnnotations(cxxRecordDecl);
 		}
-		else {
-			type->setKind(TypeKind::PRIMITIVE);
-		}
+
+		for (auto qt : templateArgs)
+			type->addTemplateArgument(qt);
 
 		m_Storage->addType(type);
 
-		return typeId;
+		if (auto declCtx = cType->getAsTagDecl()->castToDeclContext(cType->getAsTagDecl()))
+			ScrapeDeclContext(declCtx, type);
+
+		return type;
 	}
 
-	std::pair<std::string, std::string> ASTScraper::GetNameFromType(const clang::Type* type)
+	void ASTScraper::ScrapeFieldDecl(const clang::FieldDecl* fieldDecl, Type* parent)
 	{
-		auto rDecl = type->getAsCXXRecordDecl();
-		auto binType = type->getAs<clang::BuiltinType>();
-		auto tsType = clang::dyn_cast<clang::TemplateSpecializationType>(type);
+		if (!parent)
+			return;
+		if (fieldDecl->isAnonymousStructOrUnion())
+			return;
 
-		if (type->isBuiltinType()) {
-			if (binType) {
-				static clang::LangOptions lang_opts;
-				static clang::PrintingPolicy printing_policy(lang_opts);
+		metacpp::QualifiedName qualifiedName = ResolveQualifiedName(fieldDecl->getQualifiedNameAsString());
 
-				std::string name = binType->getName(printing_policy);
-				return std::make_pair(name, name);
-			}
-		}
-		else if (rDecl) {
-			std::string fullName = rDecl->getQualifiedNameAsString();
-			std::string name = rDecl->getNameAsString();
+		Field* field = new Field(ResolveQualType(fieldDecl->getType()), qualifiedName);
 
-			if (tsType) {
-				std::string specialized_args = "<";
-				clang::ArrayRef<clang::TemplateArgument> args = tsType->template_arguments();
-				for (const clang::TemplateArgument& arg : args) {
-					TypeID arg_hash = AddType(arg.getAsType().getTypePtr());
-					if (arg_hash)
-						specialized_args += m_Storage->getType(arg_hash)->getFullName() + ",";
-				}
-				if (tsType->getNumArgs() > 0)
-					specialized_args.pop_back();
-				specialized_args += ">";
+		field->setOffset(m_Context->getFieldOffset(fieldDecl) / 8);
 
-				return std::make_pair(fullName + specialized_args, name + specialized_args);
-			}
-			else if (rDecl->hasDefinition() && !rDecl->isImplicit() && !rDecl->isDependentType())
-				return std::make_pair(fullName, name);
-		}
-
-
-		return std::make_pair("", "");
+		parent->addField(field);
 	}
 
-	void ASTScraper::ScrapeRecord(const clang::CXXRecordDecl* rDecl, Type* type)
+	QualifiedType* ASTScraper::ResolveQualType(clang::QualType qualType)
 	{
-		type->setKind(rDecl->isStruct() ? TypeKind::STRUCT : TypeKind::CLASS);
+		MakeCanonical(qualType);
 
-		/* Fields */
-		for (auto it = rDecl->field_begin(); it != rDecl->field_end(); it++) {
-			clang::FieldDecl* fieldDecl = *it;
-			if (fieldDecl) {
-				FieldID fieldId = ScrapeField(fieldDecl, type);
-				if(fieldId != 0)
-					type->addField(fieldId);
-			}
+		QualifiedType* qualifiedType = new QualifiedType();
+
+		qualifiedType->setConst(qualType.isConstant(*m_Context));
+
+		if (auto ptr = clang::dyn_cast<clang::PointerType>(qualType.split().Ty)) {
+			qualifiedType->setQualifierOperator(QualifierOperator::POINTER);
+			qualType = ptr->getPointeeType();
+		}
+		else if (auto ref = clang::dyn_cast<clang::ReferenceType>(qualType.split().Ty)) {
+			qualifiedType->setQualifierOperator(QualifierOperator::REFERENCE);
+			qualType = ptr->getPointeeType();
+		} else
+			qualifiedType->setQualifierOperator(QualifierOperator::VALUE);
+
+		MakeCanonical(qualType);
+
+		const clang::Type* cType = qualType.split().Ty;
+
+		Type* type = ScrapeType(cType);
+		qualifiedType->setTypeID(type ? type->getID() : 0);
+
+		return qualifiedType;
+	}
+
+	void ASTScraper::MakeCanonical(clang::QualType& qualType)
+	{
+		if (!qualType.isCanonical())
+			qualType = qualType.getCanonicalType();
+	}
+
+	QualifiedName ASTScraper::ResolveQualifiedName(std::string qualifiedName)
+	{
+		RemoveAll(qualifiedName, "::(anonymous union)");
+		RemoveAll(qualifiedName, "::(anonymous struct)");
+
+		return QualifiedName(qualifiedName);
+	}
+
+	void ASTScraper::RemoveAll(std::string& source, const std::string& search)
+	{
+		std::string::size_type n = search.length();
+		for (std::string::size_type i = source.find(search); i != std::string::npos; i = source.find(search))
+			source.erase(i, n);
+	}
+
+	AccessSpecifier ASTScraper::TransformAccess(const clang::AccessSpecifier as)
+	{
+		switch (as) {
+		case clang::AccessSpecifier::AS_public:
+		case clang::AccessSpecifier::AS_none:
+			return AccessSpecifier::PUBLIC;
+		case clang::AccessSpecifier::AS_protected:
+			return AccessSpecifier::PROTECTED;
+		case clang::AccessSpecifier::AS_private:
+			return AccessSpecifier::PRIVATE;
 		}
 	}
 
-	FieldID ASTScraper::ScrapeField(const clang::FieldDecl* fDecl, const Type* owner)
+	std::vector<std::string> ASTScraper::ScrapeAnnotations(const clang::Decl* decl)
 	{
-		clang::QualType qualType = fDecl->getType();
-		const clang::Type* c_type = qualType.getTypePtr();
+		std::vector<std::string> annotations;
 
-		TypeID typeId = AddType(c_type);
-		if (!typeId)
-			return 0; // NULL
+		if (decl && decl->hasAttrs()) {
+			auto it = decl->specific_attr_begin<clang::AnnotateAttr>();
+			auto itEnd = decl->specific_attr_end<clang::AnnotateAttr>();
 
-		std::string name = fDecl->getNameAsString();
-		std::string fullName = owner->getFullName() + "::" + name;
-		FieldID fieldId = m_Storage->assignFieldID(fullName);
+			// __attribute__((annotate("...")))
+			for (; it != itEnd; it++) {
+				const clang::AnnotateAttr* attr = clang::dyn_cast<clang::AnnotateAttr>(*it);
+				if (attr)
+					annotations.emplace_back(attr->getAnnotation());
+			}
+		}
 
-		Field* field = new Field(fieldId, typeId, owner->getID(), fullName, name);
+		return annotations;
+	}
 
-		unsigned int offset_bytes = m_Context->getFieldOffset(fDecl) / 8;
-		field->setOffset(offset_bytes);
+	bool ASTScraper::IsReflected(const std::vector<std::string>& attrs)
+	{
+		if (m_Config.AnnotationRequired.size() == 0)
+			return true;
+		return std::find(attrs.begin(), attrs.end(), m_Config.AnnotationRequired) != attrs.end();
+	}
 
-		m_Storage->addField(field);
-
-		return fieldId;
+	void ASTScraper::SetContext(clang::ASTContext* context)
+	{
+		m_Context = context;
 	}
 }

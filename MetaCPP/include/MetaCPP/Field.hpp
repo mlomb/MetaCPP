@@ -4,34 +4,30 @@
 #include <vector>
 #include <string>
 
-#include "IDs.hpp"
-#include "Dumpeable.hpp"
+#include "TypeID.hpp"
+#include "QualifiedName.hpp"
+#include "QualifiedType.hpp"
+#include "Exportable.hpp"
 
 namespace metacpp {
-	class Field : public Dumpeable {
+	class Field : public Exportable {
 	public:
-		Field(const FieldID id, const TypeID type, const TypeID owner, const std::string fullName, const std::string name);
+		Field(QualifiedType* type, const QualifiedName& qName);
 
-		FieldID getID() const;
-		TypeID getType() const;
+		QualifiedType* getType() const;
 		TypeID getOwnerType() const;
-		std::string getName() const;
-		std::string getFullName() const;
+		const QualifiedName& getQualifiedName() const;
 
-		void setType(const TypeID typeId);
 		void setOwner(const TypeID ownerTypeId);
 		void setOffset(const unsigned int bytes);
 
+		mustache::data Field::asMustache() const override;
 	private:
-		const FieldID m_ID;
-		TypeID m_Type;
 		TypeID m_Owner;
-		std::string m_FullName;
-		std::string m_Name;
-		
-		unsigned int m_OffsetInBytes;
+		QualifiedType* m_Type;
+		QualifiedName m_QualifiedName;
 
-		void dump_obj(std::ostream& o) override;
+		unsigned int m_OffsetInBytes;
 	};
 }
 

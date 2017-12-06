@@ -1,25 +1,48 @@
+#ifndef METACPP_ASTSCRAPER_HPP
+#define METACPP_ASTSCRAPER_HPP
+
 #include <clang/AST/DeclCXX.h>
 
 #include "MetaCPP/Storage.hpp"
+#include "MetaCPP/QualifiedName.hpp"
+#include "MetaCPP/QualifiedType.hpp"
 
 namespace metacpp {
-
 	class ASTScraper {
 	public:
-		ASTScraper(clang::ASTContext* context, Storage* storage);
+		struct Configuration {
+			std::string AnnotationRequired;
+		};
 
-		std::pair<std::string, std::string> GetNameFromType(const clang::Type* type);
+		ASTScraper(Storage* storage, const Configuration& config);
 
-		TypeID AddType(const clang::Type* type);
+		void ScrapeTranslationUnit(const clang::TranslationUnitDecl* tuDecl);
+		void ScrapeDeclContext(const clang::DeclContext* ctxDecl, Type* parent);
+		void ScrapeNamedDecl(const clang::NamedDecl* namedDecl, Type* parent);
 
-		void ScrapeDecl(const clang::Decl* decl);
-		TypeID ScrapeTypeDecl(const clang::TypeDecl* typeDecl);
+		Type* ScrapeCXXRecordDecl(const clang::CXXRecordDecl* cxxRecordDecl, Type* parent);
+		std::vector<QualifiedType*> ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName);
+		Type* ScrapeType(const clang::Type* cType);
+		void ScrapeFieldDecl(const clang::FieldDecl* fieldDecl, Type* parent);
 
-		void ScrapeRecord(const clang::CXXRecordDecl* rDecl, Type* type);
-		FieldID ScrapeField(const clang::FieldDecl* fDecl, const Type* owner);
+		QualifiedType* ResolveQualType(clang::QualType qualType);
+		std::vector<std::string> ScrapeAnnotations(const clang::Decl* decl);
+
+		/* Utility */
+		void MakeCanonical(clang::QualType& qualType);
+		QualifiedName ResolveQualifiedName(std::string qualifiedName);
+		void RemoveAll(std::string& source, const std::string& search);
+		AccessSpecifier TransformAccess(const clang::AccessSpecifier as);
+
+		bool IsReflected(const std::vector<std::string>& attrs);
+
+		void SetContext(clang::ASTContext* context);
 
 	private:
 		clang::ASTContext* m_Context;
+		Configuration m_Config;
 		Storage* m_Storage;
 	};
 }
+
+#endif

@@ -1,0 +1,3 @@
+R"(TypeName: {{name}}
+TypeSize: {{size}} bytes
+)"

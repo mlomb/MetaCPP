@@ -3,30 +3,44 @@
 
 #include <llvm/Support/CommandLine.h>
 
-#include "MetaGenerator.hpp"
+#include "ASTScraper.hpp"
+#include "MetaExporter.hpp"
+#include "ScraperTool.hpp"
 #include "MetaCPP/Storage.hpp"
 
 using namespace llvm;
 
-static cl::list<std::string> InputSource(cl::Positional, cl::Required, "in-source", cl::desc("Specify input filename"), cl::value_desc("filename"));
+static cl::opt<std::string> InputSource(cl::Positional, cl::Required, "in-source", cl::desc("Specify input filename"), cl::value_desc("filename"));
 static cl::opt<std::string> OutputHeader("out-header", cl::desc("Specify header output filename"), cl::value_desc("filename"), cl::init("output.hpp"));
 static cl::opt<std::string> OutputSource("out-source", cl::desc("Specify source output filename"), cl::value_desc("filename"), cl::init("output.cpp"));
 
-static cl::list<std::string> AdditionalFlags("flag", cl::desc("Additional compiler flag"), cl::value_desc("flags"), cl::ZeroOrMore);
+static cl::list<std::string> CompilerFlags("flag", cl::desc("Compiler flags"), cl::value_desc("flags"), cl::ZeroOrMore);
+
+static cl::opt<std::string> ReflectionAnnotation("reflection-annotation", cl::desc("Only reflect types that contain this annotation"), cl::value_desc("name"));
 
 int main(int argc, const char** argv) {
 	cl::ParseCommandLineOptions(argc, argv, "MetaCPP");
 
-	//AdditionalFlags.push_back("-DTEST");
-
 	metacpp::Storage* storage = new metacpp::Storage();
 
-	metacpp::MetaGenerator* generator = new metacpp::MetaGenerator(InputSource, AdditionalFlags);
-	generator->Generate(storage);
+	// Generate Metadata
+	{
+		metacpp::ASTScraper::Configuration configuration;
+		configuration.AnnotationRequired = ReflectionAnnotation;
+
+		metacpp::ASTScraper* scraper = new metacpp::ASTScraper(storage, configuration);
+		metacpp::ScraperTool tool(InputSource, CompilerFlags);
+		tool.Run(scraper);
+		delete scraper;
+	}
 
 	storage->dump();
 
-	std::cout << "OK" << std::endl;
+	// Export Metadata
+	{
+		metacpp::MetaExporter exporter(storage);
+		exporter.Export(InputSource, OutputHeader, OutputSource);
+	}
 
-	return 1;
+	return 0;
 }

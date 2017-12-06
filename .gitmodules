@@ -1,0 +1,3 @@
+[submodule "External/Mustache"]
+	path = External/Mustache
+	url = https://github.com/kainjow/Mustache.git

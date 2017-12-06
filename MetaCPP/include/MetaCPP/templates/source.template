@@ -1,0 +1,83 @@
+R"(/****************************************************************************
+** MetaCPP
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#include <MetaCPP/TypeInfo.hpp>
+#include <MetaCPP/Type.hpp>
+#include <MetaCPP/Field.hpp>
+#include <MetaCPP/Method.hpp>
+#include <MetaCPP/Storage.hpp>
+
+{{#includes}}
+#include "{{file}}"
+{{/includes}}
+
+namespace metacpp { namespace generated {
+	void Load(Storage* storage) {
+		//////////////////////////////////////////////
+		// Types
+		//////////////////////////////////////////////
+		{{#types}}
+		{
+			Type* type = new Type({{id}}, QualifiedName("{{qualifiedName}}"));
+			type->setSize({{size}});
+			type->setKind(static_cast<TypeKind>({{kind}}));
+			type->setAccess(static_cast<AccessSpecifier>({{access}}));
+			
+			// Base Types
+			{{#baseTypes}}
+			{
+				{{#qualifiedType}}
+)" +
+#include "templates/source.qualifiedType.template"
++ R"(
+				{{/qualifiedType}}
+				type->addBaseType(qualifiedType, static_cast<AccessSpecifier>({{access}}));
+			}
+			{{/baseTypes}}
+			
+			// Template arguments
+			{{#templateArguments}}
+			{
+)" +
+#include "templates/source.qualifiedType.template"
++ R"(
+				type->addTemplateArgument(qualifiedType);
+			}
+			{{/templateArguments}}
+			
+			// Fields
+			{{#fields}}
+			{
+				{{#qualifiedType}}
+)" +
+#include "templates/source.qualifiedType.template"
++ R"(
+				{{/qualifiedType}}
+				
+				Field* field = new Field(qualifiedType, QualifiedName("{{qualifiedName}}"));
+				field->setOffset({{offset}});
+				type->addField(field);
+			}
+			{{/fields}}
+			
+			storage->addType(type);
+#if ({{access}} == 0 && {{valid}} == 1) // public & valid
+			TypeInfo<{{qualifiedName}}>::ID = {{id}};
+			TypeInfo<{{qualifiedName}}>::TYPE = type;
+#endif
+		}
+		{{/types}}
+		
+		//////////////////////////////////////////////
+		// TypeInfo
+		//////////////////////////////////////////////
+		{{#ids}}
+		storage->assignTypeID("{{qualifiedName}}", {{id}});
+		{{/ids}}
+	}
+} }
+
+)"

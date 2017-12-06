@@ -1,0 +1,13 @@
+R"(/****************************************************************************
+** MetaCPP
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#include <MetaCPP/Storage.hpp>
+
+namespace metacpp { namespace generated {
+	extern void Load(Storage* storage);
+} }
+
+)"

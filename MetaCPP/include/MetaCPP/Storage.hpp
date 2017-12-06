@@ -1,45 +1,43 @@
 #ifndef METACPP_STORAGE_HPP
 #define METACPP_STORAGE_HPP
 
-#include <vector>
 #include <map>
 
 #include "Type.hpp"
-#include "Dumpeable.hpp"
+#include "TypeInfo.hpp"
+#include "Exportable.hpp"
 
 namespace metacpp {
-	class Storage : public Dumpeable {
+	class Storage : public Exportable {
 	public:
 		Storage();
 
-		ID getID(const IDTypes idType, const std::string& name);
-		TypeID getTypeID(const std::string& name);
-		FieldID getFieldID(const std::string& name);
-
-		void* get(const IDTypes idType, const ID id) const;
-		Type* getType(const TypeID typeId) const;
-		Field* getField(const FieldID fieldId) const;
-
-		ID assignID(const IDTypes idType, const std::string& name, const ID id = 0);
 		TypeID assignTypeID(const std::string& name, const TypeID typeId = 0);
-		FieldID assignFieldID(const std::string& name, const FieldID fieldId = 0);
-
-		void add(const IDTypes idType, const ID id, void* ptr);
 		void addType(Type* type);
-		void addField(Field* field);
 
-		bool has(const IDTypes idType, const ID id) const;
+		TypeID getTypeID(const std::string& name) const;
+		Type* getType(const TypeID typeId) const;
+		Type* getType(const std::string& name) const;
+		template<typename T>
+		Type* getType() const;
+
 		bool hasType(const TypeID typeId) const;
-		bool hasField(const FieldID fieldId) const;
-		
+
+		mustache::data asMustache() const override;
 	private:
-		std::map<IDTypes, std::map<std::string, ID>>	m_IDs;
-		std::map<IDTypes, std::map<ID,			void*>> m_Objects;
+		std::string dumpTemplate() override;
 
-		ID m_NextID = 1;
+		std::map<std::string, TypeID> m_IDs;
+		std::map<TypeID, Type*> m_Types;
 
-		void dump_obj(std::ostream& o) override;
+		TypeID m_NextID = 1;
 	};
+
+	template<typename T>
+	inline Type* Storage::getType() const
+	{
+		return TypeInfo<T>::TYPE;
+	}
 }
 
 #endif
