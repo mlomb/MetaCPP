@@ -5,7 +5,7 @@
 
 namespace metacpp { namespace templates {
 
-#define METACPP_TEMPLATE(name) const std::string (##name) = std::string("") + 
+#define METACPP_TEMPLATE(name) const std::string name = std::string("") + 
 
 	/* Code templates */
 	METACPP_TEMPLATE(header)

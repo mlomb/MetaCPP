@@ -11,6 +11,11 @@
 namespace metacpp {
 	ScraperTool::ScraperTool(std::string source, std::vector<std::string> flags)
 	{
+#if _DEBUG
+		// For now
+		flags.push_back("-D_DEBUG");
+#endif
+
 		m_CompilationDatabase = new clang::tooling::FixedCompilationDatabase(".", flags);
 		m_ClangTool = new clang::tooling::ClangTool(*m_CompilationDatabase, source);
 	}

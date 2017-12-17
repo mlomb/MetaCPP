@@ -4,7 +4,9 @@
 
 #include <clang/AST/RecordLayout.h>
 #include <clang/AST/DeclTemplate.h>
-#include "clang/AST/Decl.h"
+#include <clang/AST/VTableBuilder.h>
+#include <clang/AST/Decl.h>
+#include <clang/Basic/TargetInfo.h>
 
 #include "MetaCPP/Type.hpp"
 
@@ -145,6 +147,10 @@ namespace metacpp {
 			if (cxxRecordDecl->isThisDeclarationADefinition() == clang::VarDecl::DeclarationOnly)
 				return 0; // forward declaration
 			templateArgs = ResolveCXXRecordTemplate(cxxRecordDecl, qualifiedName);
+
+			if (qualifiedName.getName().size() == 0)
+				return 0;
+
 			kind = cType->isStructureType() ? metacpp::TypeKind::STRUCT : metacpp::TypeKind::CLASS;
 			break;
 		}
@@ -239,6 +245,11 @@ namespace metacpp {
 	{
 		RemoveAll(qualifiedName, "::(anonymous union)");
 		RemoveAll(qualifiedName, "::(anonymous struct)");
+		RemoveAll(qualifiedName, "::(anonymous)");
+
+		RemoveAll(qualifiedName, "(anonymous union)");
+		RemoveAll(qualifiedName, "(anonymous struct)");
+		RemoveAll(qualifiedName, "(anonymous)");
 
 		return QualifiedName(qualifiedName);
 	}

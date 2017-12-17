@@ -52,6 +52,37 @@ namespace metacpp {
 	{
 		return m_Types.count(typeId);
 	}
+	
+	bool Storage::isDerived(const TypeID derived, const TypeID base) const
+	{
+		Type* derivedType = getType(derived);
+		auto& baseTypes = derivedType->getBaseTypes();
+		for (auto& baseType : baseTypes) {
+			if (baseType.type->getTypeID() == base)
+				return true;
+			if (isDerived(baseType.type->getTypeID(), base))
+				return true;
+		}
+		return false;
+	}
+
+	std::vector<Field*> Storage::getAllFields(const Type* type)
+	{
+		std::vector<Field*> fields;
+
+		for (auto& baseType : type->getBaseTypes()) {
+			const std::vector<Field*>& parentFields = getAllFields(getType(baseType.type->getTypeID()));
+			fields.reserve(fields.size() + parentFields.size());
+			fields.insert(fields.end(), parentFields.begin(), parentFields.end());
+		}
+
+		const std::vector<Field*>& typeFields = type->getFields();
+
+		fields.reserve(fields.size() + typeFields.size());
+		fields.insert(fields.end(), typeFields.begin(), typeFields.end());
+
+		return fields;
+	}
 
 	mustache::data Storage::asMustache() const
 	{

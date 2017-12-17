@@ -4,6 +4,9 @@
 #include <vector>
 #include <string>
 
+#include <mustache.hpp>
+using namespace kainjow;
+
 namespace metacpp {
 	class Storage;
 
@@ -14,7 +17,11 @@ namespace metacpp {
 		void Export(const std::string& inputSource, const std::string& outputHeader, const std::string& outputSource);
 		
 	private:
-		std::string GenerateSourceFile(const std::vector<std::string>& includes);
+		std::string GenerateSourceFile(const std::vector<std::string>& includes, mustache::data& storageData);
+		std::string GenerateHeaderFile(const std::vector<std::string>& includes, mustache::data& storageData);
+
+		void SetIncludes(const std::vector<std::string>& includes, mustache::data& data);
+
 		const Storage* m_Storage;
 	};
 }

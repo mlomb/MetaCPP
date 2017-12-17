@@ -8,7 +8,7 @@ namespace metacpp {
 
 	class Runtime {
 	public:
-		static Storage* Storage();
+		static Storage* GetStorage();
 
 	private:
 		static metacpp::Storage* s_Storage;

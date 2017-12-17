@@ -35,14 +35,18 @@ namespace metacpp {
 		const QualifiedName& getQualifiedName() const;
 		TypeKind getKind() const;
 		AccessSpecifier getAccess() const;
+		size_t getSize() const;
 		bool isPrimitive() const;
 		bool isStruct() const;
 		bool isClass() const;
 		bool isValid() const;
+		const std::vector<Field*>& getFields() const;
+		const std::vector<QualifiedType*> getTemplateArguments() const;
+		const std::vector<BaseType>& getBaseTypes() const;
 
 		void setKind(const TypeKind kind);
 		void setAccess(const AccessSpecifier access);
-		void setSize(const unsigned int bytes);
+		void setSize(const size_t bytes);
 
 		void addBaseType(QualifiedType* baseType, const AccessSpecifier access);
 		void addTemplateArgument(QualifiedType* arg, int pos = -1);
@@ -56,7 +60,7 @@ namespace metacpp {
 
 		const TypeID m_ID;
 		const QualifiedName m_QualifiedName;
-		unsigned int m_SizeInBytes = -1;
+		size_t m_SizeInBytes = -1;
 		TypeKind m_Kind = PRIMITIVE;
 		AccessSpecifier m_Access = PUBLIC;
 

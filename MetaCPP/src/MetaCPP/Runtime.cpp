@@ -3,7 +3,7 @@
 namespace metacpp {
 	Storage* Runtime::s_Storage = 0;
 
-	Storage* Runtime::Storage()
+	Storage* Runtime::GetStorage()
 	{
 		if (s_Storage == 0)
 			s_Storage = new metacpp::Storage();

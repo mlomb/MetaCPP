@@ -30,6 +30,11 @@ namespace metacpp {
 		return m_Access;
 	}
 
+	size_t Type::getSize() const
+	{
+		return m_SizeInBytes;
+	}
+
 	bool Type::isPrimitive() const
 	{
 		return m_Kind == TypeKind::PRIMITIVE;
@@ -52,6 +57,21 @@ namespace metacpp {
 			&& qName.find("UNKNOWN") == std::string::npos;
 	}
 
+	const std::vector<Field*>& Type::getFields() const
+	{
+		return m_Fields;
+	}
+	
+	const std::vector<QualifiedType*> Type::getTemplateArguments() const
+	{
+		return m_TemplateArguments;
+	}
+
+	const std::vector<BaseType>& Type::getBaseTypes() const
+	{
+		return m_BaseTypes;
+	}
+
 	void Type::setKind(const TypeKind kind)
 	{
 		m_Kind = kind;
@@ -62,7 +82,7 @@ namespace metacpp {
 		m_Access = access;
 	}
 
-	void Type::setSize(const unsigned int bytes)
+	void Type::setSize(const size_t bytes)
 	{
 		m_SizeInBytes = bytes;
 	}

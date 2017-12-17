@@ -29,6 +29,11 @@ namespace metacpp {
 		return m_Owner;
 	}
 
+	size_t Field::getOffset() const
+	{
+		return m_OffsetInBytes;
+	}
+
 	const QualifiedName& Field::getQualifiedName() const
 	{
 		return m_QualifiedName;
@@ -39,7 +44,7 @@ namespace metacpp {
 		m_Owner = ownerTypeId;
 	}
 
-	void Field::setOffset(const unsigned int bytes)
+	void Field::setOffset(const size_t bytes)
 	{
 		m_OffsetInBytes = bytes;
 	}

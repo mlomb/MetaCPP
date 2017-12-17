@@ -16,19 +16,29 @@ namespace metacpp {
 
 		QualifiedType* getType() const;
 		TypeID getOwnerType() const;
+		size_t getOffset() const;
 		const QualifiedName& getQualifiedName() const;
 
 		void setOwner(const TypeID ownerTypeId);
-		void setOffset(const unsigned int bytes);
+		void setOffset(const size_t bytes);
 
-		mustache::data Field::asMustache() const override;
+		template<typename T>
+		T* get(void* object) const;
+
+		mustache::data asMustache() const override;
 	private:
 		TypeID m_Owner;
 		QualifiedType* m_Type;
 		QualifiedName m_QualifiedName;
 
-		unsigned int m_OffsetInBytes;
+		size_t m_OffsetInBytes;
 	};
+
+	template<typename T>
+	inline T* Field::get(void* object) const
+	{
+		return reinterpret_cast<T*>((size_t)object + m_OffsetInBytes);
+	}
 }
 
 #endif

@@ -11,16 +11,18 @@ namespace metacpp {
 	public:
 		QualifiedName();
 		QualifiedName(const Namespace& namespace_);
-		QualifiedName(const Namespace& namespace_, const std::string& name);
+		QualifiedName(const Namespace& namespace_, const std::string& name, const std::string& templateArgs = "");
 		QualifiedName(std::string fullQualified);
 
 		std::string getName() const;
+		std::string getTemplateArgs() const;
+		std::string getTemplatedName() const;
 		Namespace getNamespace() const;
 		std::string fullQualified() const;
 
 	private:
 		Namespace m_Namespace;
-		std::string m_Name;
+		std::string m_Name, m_TemplateArgs;
 	};
 }
 

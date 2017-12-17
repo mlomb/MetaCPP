@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.1)
 project(MetaCPP-CLI)
 
 set (CMAKE_CXX_STANDARD 11)
@@ -20,12 +20,12 @@ file(GLOB_RECURSE MetaCPPCLI_SRC ${MetaCPPCLI_SRC_DIR}/*.hpp
 
 add_executable(MetaCPPCLI ${MetaCPPCLI_SRC})
 
-target_link_libraries(MetaCPPCLI MetaCPP)
+target_link_libraries(MetaCPPCLI PUBLIC MetaCPP)
 
 # LLVM and Clang
 target_link_libraries(MetaCPPCLI PUBLIC ${CLANG_LIBS} ${LLVM_LIBS_CORE} ${LLVM_LDFLAGS})
 target_include_directories(MetaCPPCLI PRIVATE ${LLVM_INCLUDE_DIR} ${CLANG_INCLUDE_DIRS})
 if(WIN32)
 	# Annoying lib in Windows
-	target_link_libraries(MetaCPPCLI version.lib)
+	target_link_libraries(MetaCPPCLI PRIVATE version.lib)
 endif()

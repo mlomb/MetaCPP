@@ -22,13 +22,16 @@ namespace metacpp {
 		Type* getType() const;
 
 		bool hasType(const TypeID typeId) const;
+		bool isDerived(const TypeID derived, const TypeID base) const;
+
+		std::vector<Field*> getAllFields(const Type* type);
 
 		mustache::data asMustache() const override;
 	private:
 		std::string dumpTemplate() override;
 
-		std::map<std::string, TypeID> m_IDs;
-		std::map<TypeID, Type*> m_Types;
+		std::unordered_map<std::string, TypeID> m_IDs;
+		std::unordered_map<TypeID, Type*> m_Types;
 
 		TypeID m_NextID = 1;
 	};

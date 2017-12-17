@@ -4,7 +4,6 @@ R"(/****************************************************************************
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include <MetaCPP/TypeInfo.hpp>
 #include <MetaCPP/Type.hpp>
 #include <MetaCPP/Field.hpp>
 #include <MetaCPP/Method.hpp>
@@ -31,7 +30,7 @@ namespace metacpp { namespace generated {
 			{
 				{{#qualifiedType}}
 )" +
-#include "templates/source.qualifiedType.template"
+#include "source.qualifiedType.template"
 + R"(
 				{{/qualifiedType}}
 				type->addBaseType(qualifiedType, static_cast<AccessSpecifier>({{access}}));
@@ -42,7 +41,7 @@ namespace metacpp { namespace generated {
 			{{#templateArguments}}
 			{
 )" +
-#include "templates/source.qualifiedType.template"
+#include "source.qualifiedType.template"
 + R"(
 				type->addTemplateArgument(qualifiedType);
 			}
@@ -53,7 +52,7 @@ namespace metacpp { namespace generated {
 			{
 				{{#qualifiedType}}
 )" +
-#include "templates/source.qualifiedType.template"
+#include "source.qualifiedType.template"
 + R"(
 				{{/qualifiedType}}
 				
@@ -72,7 +71,7 @@ namespace metacpp { namespace generated {
 		{{/types}}
 		
 		//////////////////////////////////////////////
-		// TypeInfo
+		// IDs
 		//////////////////////////////////////////////
 		{{#ids}}
 		storage->assignTypeID("{{qualifiedName}}", {{id}});
