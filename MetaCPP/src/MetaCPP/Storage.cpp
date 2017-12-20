@@ -56,6 +56,9 @@ namespace metacpp {
 	bool Storage::isDerived(const TypeID derived, const TypeID base) const
 	{
 		Type* derivedType = getType(derived);
+		if (derivedType == 0)
+			return false;
+
 		auto& baseTypes = derivedType->getBaseTypes();
 		for (auto& baseType : baseTypes) {
 			if (baseType.type->getTypeID() == base)
