@@ -6,4 +6,4 @@ add_executable(Example-Generation main.cpp)
 target_link_libraries(Example-Generation MetaCPP)
 
 include(../../CMake/MetaPrebuild.cmake)
-meta_generate(Example-Generation "test.hpp" "Generated.hpp" "Generated.cpp")
+meta_generate(Example-Generation "test.hpp" "Generated.hpp" "Generated.cpp" "")

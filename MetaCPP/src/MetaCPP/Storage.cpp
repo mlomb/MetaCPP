@@ -48,6 +48,12 @@ namespace metacpp {
 		m_Types.insert(std::make_pair(type->getID(), type));
 	}
 
+	void Storage::addDynamicCast(TypeID base, TypeID derived, const DynamicCast& dc)
+	{
+		int index = (size_t)base << 32 | (unsigned int)derived;
+		m_DynamicCasts.insert(std::make_pair(index , dc));
+	}
+
 	bool Storage::hasType(const TypeID typeId) const
 	{
 		return m_Types.count(typeId);
@@ -85,6 +91,31 @@ namespace metacpp {
 		fields.insert(fields.end(), typeFields.begin(), typeFields.end());
 
 		return fields;
+	}
+
+	std::pair<const Type*, void*> Storage::ResolveDerivedType(const Type* baseClass, void* base_ptr) {
+		for (const TypeID derived_id : baseClass->getDerivedTypes()) {
+			int index = (size_t)baseClass->getID() << 32 | (unsigned int)derived_id;
+			auto it = m_DynamicCasts.find(index);
+			if (it != m_DynamicCasts.end()) {
+				const DynamicCast& dc = (*it).second;
+				if (void* derived_ptr = dc(base_ptr)) {
+					return ResolveDerivedType(getType(derived_id), derived_ptr);
+				}
+			}
+		}
+		return std::make_pair(baseClass, base_ptr);
+	}
+
+	Type* Storage::FindDerivedTypeWithName(const Type* base, const std::string& derived_name)
+	{
+		for (const TypeID derived_id : base->getDerivedTypes()) {
+			Type* derived_type = getType(derived_id);
+			if (derived_type->getQualifiedName().getTemplatedName() == derived_name)
+				return derived_type;
+			FindDerivedTypeWithName(derived_type, derived_name);
+		}
+		return nullptr;
 	}
 
 	mustache::data Storage::asMustache() const

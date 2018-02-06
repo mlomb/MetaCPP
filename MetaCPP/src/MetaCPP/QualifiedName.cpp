@@ -55,11 +55,13 @@ namespace metacpp {
 			m_Namespace.pop_back();
 		}
 
-		auto pos = m_Name.find("<");
-		if (pos != std::string::npos) {
-			m_TemplateArgs = m_Name.substr(pos + 1);
-			m_TemplateArgs.pop_back();
-			m_Name = m_Name.substr(0, pos);
+		if (m_Name.substr(0, 8) != "operator") {
+			auto pos = m_Name.find("<");
+			if (pos != std::string::npos) {
+				m_TemplateArgs = m_Name.substr(pos + 1);
+				m_TemplateArgs.pop_back();
+				m_Name = m_Name.substr(0, pos);
+			}
 		}
 	}
 
@@ -89,7 +91,7 @@ namespace metacpp {
 
 	std::string QualifiedName::getTemplatedName() const
 	{
-		return m_Name + "<" + m_TemplateArgs + ">";
+		return m_Name + (m_TemplateArgs.size() > 0 ? "<" + m_TemplateArgs + ">" : "");
 	}
 
 	Namespace QualifiedName::getNamespace() const

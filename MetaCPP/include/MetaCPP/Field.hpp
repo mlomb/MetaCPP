@@ -23,7 +23,9 @@ namespace metacpp {
 		void setOffset(const size_t bytes);
 
 		template<typename T>
-		T* get(void* object) const;
+		T* get(const void* object) const;
+		template<typename T>
+		void set(const T& value, const void* object) const;
 
 		mustache::data asMustache() const override;
 	private:
@@ -35,9 +37,16 @@ namespace metacpp {
 	};
 
 	template<typename T>
-	inline T* Field::get(void* object) const
+	inline T* Field::get(const void* object) const
 	{
 		return reinterpret_cast<T*>((size_t)object + m_OffsetInBytes);
+	}
+
+	template<typename T>
+	inline void Field::set(const T& value, const void* object) const
+	{
+		T& obj_value = *reinterpret_cast<T*>((size_t)object + m_OffsetInBytes);
+		obj_value = value;
 	}
 }
 

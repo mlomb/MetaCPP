@@ -1,81 +1,56 @@
 // This is a dumb file
 
-//#include <vector>
+#include <string>
+#include <vector>
 
-namespace N5 {
-	enum AnEnum {
-		AnEnumElement,
-		AnotherEnumElement,
-		YetAnotherEnumElement
-	};
-}
-
-namespace N1 {
-	struct Point {
-		struct WhyNot {
-		protected:
-			int whynotint;
-		};
-		double x, y;
-		WhyNot wn;
-		int WhyNot;
-	};
-}
-
-
-class Base {
-protected:
-	int a;
-	double b;
-	N5::AnEnum daenum;
-public:
-	float method(short c) {
-		return a + c;
-	}
+template<typename T>
+struct Vector {
+	T x, y;
 };
 
-namespace N4 {
-	template<typename T>
-	class ExampleT {
-	public:
-		ExampleT() {};
+typedef Vector<int> Vectori;
+typedef Vector<float> Vectorf;
 
-	private:
-		int a;
-		T var;
-		char c;
-	};
-}
+struct Target {
+public:
+	Target() {
+
+	}
+
+	bool attack;
+	Vectorf targetPosition;
+
+	Target* target;
+	std::vector<Vectori> vics;
+	std::vector<Target*> tgts;
+};
+
+class Base {
+public:
+	virtual ~Base() {};
+
+	int base_int = 3;
+};
 
 class Derived : public Base {
 public:
-	long method(int d) {
-		return a + b + d;
-	}
-protected:
-	N1::Point derived_point;
-	char c;
-	int e, f;
-
-	N4::ExampleT<float> specified3;
-	N4::ExampleT<double> specified4;
-	N4::ExampleT<int> specified5;
-	N4::ExampleT<N1::Point> specified6;
-
-	//std::vector<int> vecints;
+	int derived_int = 4;
 };
 
-namespace N2 {
-	typedef N4::ExampleT<int> ExampleTSpecified;
-	typedef int defint;
-}
+struct Entity {
+	std::string name;
+	int health;
 
-namespace N3 {
-	class Specified2 : public N4::ExampleT<N1::Point> {
-	public:
-		int jj;
-		N2::defint kk;
-		N4::ExampleT<Derived> test;
-	};
+	Vectorf m_Position;
+	Vectori m_Velocity;
 
-}
+	std::vector<int> list;
+	std::vector<std::vector<int>> two_dim;
+
+	Target* m_TargetA;
+	Target* m_TargetB;
+	Target** m_Targets;
+
+	Base* m_B;
+	Base* m_D;
+};

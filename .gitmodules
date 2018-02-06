@@ -1,3 +1,6 @@
 [submodule "External/Mustache"]
 	path = External/Mustache
 	url = https://github.com/kainjow/Mustache.git
+[submodule "External/rapidjson"]
+	path = External/rapidjson
+	url = https://github.com/Tencent/rapidjson.git

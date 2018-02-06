@@ -72,8 +72,23 @@ namespace metacpp {
 		const clang::Type* cType = cxxRecordDecl->getTypeForDecl();
 		metacpp::Type* type = ScrapeType(cType);
 
-		if (type)
+		if (type) {
+			const clang::CXXRecordDecl* typeCxxRecordDecl = cType->getAsCXXRecordDecl();
+
 			type->setAccess(TransformAccess(cxxRecordDecl->getAccess()));
+			type->setHasDefaultConstructor(!typeCxxRecordDecl->hasUserProvidedDefaultConstructor() && typeCxxRecordDecl->needsImplicitDefaultConstructor());
+
+			// methods
+			for (auto it = cxxRecordDecl->method_begin(); it != cxxRecordDecl->method_end(); it++) {
+				clang::CXXMethodDecl* method = *it;
+				if (method != 0) {
+					ScrapeMethodDecl(method, type);
+				}
+			}
+
+			if (typeCxxRecordDecl->isAbstract())
+				type->setHasDefaultConstructor(false);
+		}
 
 		return type;
 	}
@@ -90,7 +105,7 @@ namespace metacpp {
 
 			const clang::TemplateArgumentList& args = templateDecl->getTemplateArgs();
 
-			for (int i = 0; i < args.size(); i++) {
+			for (int i = 0; i < (int)args.size(); i++) {
 				const clang::TemplateArgument& arg = args[i];
 				if (i)
 					typeName += ",";
@@ -168,16 +183,26 @@ namespace metacpp {
 		
 		type->setSize(m_Context->getTypeSize(cType) / 8);
 		type->setKind(kind);
+		type->setHasDefaultConstructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.getName() != "void");
+		type->setPolymorphic(false);
 
 		if (auto cxxRecordDecl = cType->getAsCXXRecordDecl()) {
+			type->setPolymorphic(cxxRecordDecl->isPolymorphic());
+
 			// Parse base classes
 			for (auto it = cxxRecordDecl->bases_begin(); it != cxxRecordDecl->bases_end(); it++)
 			{
-				type->addBaseType(ResolveQualType(it->getType()), TransformAccess(it->getAccessSpecifier()));
-			}
+				QualifiedType* base_qtype = ResolveQualType(it->getType());
+				type->addBaseType(base_qtype, TransformAccess(it->getAccessSpecifier()));
 
+				if (it == cxxRecordDecl->bases_begin()) {
+					m_Storage->getType(base_qtype->getTypeID())->addDerivedType(typeId);
+				}
+			}
+			
 			// Scrape annotations
 			std::vector<std::string> annotations = ScrapeAnnotations(cxxRecordDecl);
+
 		}
 
 		for (auto qt : templateArgs)
@@ -207,6 +232,36 @@ namespace metacpp {
 		parent->addField(field);
 	}
 
+	void ASTScraper::ScrapeMethodDecl(const clang::CXXMethodDecl* cxxMethodDecl, Type* parent)
+	{
+		auto constructor = clang::dyn_cast<clang::CXXConstructorDecl>(cxxMethodDecl);
+		auto destructor = clang::dyn_cast<clang::CXXDestructorDecl>(cxxMethodDecl);
+
+		if (constructor && constructor->isDefaultConstructor() && constructor->getAccess() == clang::AccessSpecifier::AS_public) {
+			parent->setHasDefaultConstructor(true);
+		}
+
+		metacpp::QualifiedName qualifiedName = ResolveQualifiedName(cxxMethodDecl->getQualifiedNameAsString());
+
+		Method* method = new Method(qualifiedName);
+
+		method->setOwner(parent->getID());
+
+
+		//cxxMethodDecl->dumpColor();
+
+		//std::cout << cxxMethodDecl->isUserProvided() << cxxMethodDecl->isUsualDeallocationFunction() << cxxMethodDecl->isCopyAssignmentOperator() << cxxMethodDecl->isMoveAssignmentOperator() << std::endl;
+		//std::cout << cxxMethodDecl->isDefaulted() << std::endl;
+
+		// params
+		for (auto it = cxxMethodDecl->param_begin(); it != cxxMethodDecl->param_end(); it++) {
+			clang::ParmVarDecl* param = *it;
+
+		}
+
+		parent->addMethod(method);
+	}
+
 	QualifiedType* ASTScraper::ResolveQualType(clang::QualType qualType)
 	{
 		MakeCanonical(qualType);
@@ -221,7 +276,7 @@ namespace metacpp {
 		}
 		else if (auto ref = clang::dyn_cast<clang::ReferenceType>(qualType.split().Ty)) {
 			qualifiedType->setQualifierOperator(QualifierOperator::REFERENCE);
-			qualType = ptr->getPointeeType();
+			qualType = ref->getPointeeType();
 		} else
 			qualifiedType->setQualifierOperator(QualifierOperator::VALUE);
 
@@ -270,6 +325,7 @@ namespace metacpp {
 		case clang::AccessSpecifier::AS_protected:
 			return AccessSpecifier::PROTECTED;
 		case clang::AccessSpecifier::AS_private:
+		default:
 			return AccessSpecifier::PRIVATE;
 		}
 	}

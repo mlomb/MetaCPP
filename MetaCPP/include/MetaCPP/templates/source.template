@@ -8,6 +8,7 @@ R"(/****************************************************************************
 #include <MetaCPP/Field.hpp>
 #include <MetaCPP/Method.hpp>
 #include <MetaCPP/Storage.hpp>
+#include <MetaCPP/SequentialContainer.hpp>
 
 {{#includes}}
 #include "{{file}}"
@@ -24,6 +25,7 @@ namespace metacpp { namespace generated {
 			type->setSize({{size}});
 			type->setKind(static_cast<TypeKind>({{kind}}));
 			type->setAccess(static_cast<AccessSpecifier>({{access}}));
+			type->setPolymorphic({{polymorphic}});
 			
 			// Base Types
 			{{#baseTypes}}
@@ -36,6 +38,11 @@ namespace metacpp { namespace generated {
 				type->addBaseType(qualifiedType, static_cast<AccessSpecifier>({{access}}));
 			}
 			{{/baseTypes}}
+			
+			// Derived Types
+			{{#derivedTypes}}
+			type->addDerivedType({{derivedTypeId}});
+			{{/derivedTypes}}
 			
 			// Template arguments
 			{{#templateArguments}}
@@ -62,11 +69,65 @@ namespace metacpp { namespace generated {
 			}
 			{{/fields}}
 			
-			storage->addType(type);
 #if ({{access}} == 0 && {{valid}} == 1) // public & valid
 			TypeInfo<{{qualifiedName}}>::ID = {{id}};
 			TypeInfo<{{qualifiedName}}>::TYPE = type;
+	
+#if ({{polymorphic}} == 1) // polymorphic
+			// Dynamic Casts
+			{{#derivedTypes}}
+			storage->addDynamicCast({{id}}, {{derivedTypeId}}, [](void* ptr) -> void* {
+				{{qualifiedName}}* obj = reinterpret_cast<{{qualifiedName}}*>(ptr);
+				return dynamic_cast<{{derivedQualifiedName}}*>(obj);
+			});
+			{{/derivedTypes}}
 #endif
+			
+#if ({{hasDefaultConstructor}} == 1) // hasDefaultConstructor
+			// Constructor
+			type->setConstructor([](void* ptr) -> void* {
+				return new (ptr) {{qualifiedName}};
+			});
+#endif
+
+#if ({{isSequentialContainer}} == 1) // isSequentialContainer
+			// SequentialContainer
+			class SequentialContainerSpecialization : public SequentialContainer {
+			public:
+				SequentialContainerSpecialization(Type* type) : m_Type(type) {};
+				
+				QualifiedType* ValuesType() const override {
+					auto args = m_Type->getTemplateArguments();
+					if(args.size() == 0) return 0;
+					return args[0];
+				}
+			
+				size_t Size(void* container) const override {
+					return Cast(container).size();
+				}
+				
+				void* At(void* container, size_t index) const override {
+					return &Cast(container).at(index);
+				}
+				
+				void PushBack(void* container, void* item_ptr) const override {
+					{{containerValueQualifiedName}}* item_obj = reinterpret_cast<{{containerValueQualifiedName}}*>(item_ptr);
+					Cast(container).push_back(*item_obj);
+				}
+				
+			private:
+				{{qualifiedName}}& Cast(void* container) const {
+					return *reinterpret_cast<{{qualifiedName}}*>(container);
+				}
+				
+				Type* m_Type;
+			};
+			type->setContainer(new SequentialContainerSpecialization(type));
+#endif
+
+#endif
+
+			storage->addType(type);
 		}
 		{{/types}}
 		

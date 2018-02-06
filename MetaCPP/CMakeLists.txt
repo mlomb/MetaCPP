@@ -12,4 +12,4 @@ file(GLOB_RECURSE MetaCPP_SRC ${MetaCPP_INC_DIR}/MetaCPP/*.hpp
 
 add_library(MetaCPP ${MetaCPP_SRC})
 
-target_include_directories(MetaCPP PUBLIC ${MetaCPP_INC_DIR} ../External/Mustache)
+target_include_directories(MetaCPP PUBLIC ${MetaCPP_INC_DIR} ../External/Mustache ../External/rapidjson/include)
