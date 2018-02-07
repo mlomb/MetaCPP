@@ -3,6 +3,7 @@
 
 namespace metacpp {
 	class Container {
+	public:
 
 	};
 }

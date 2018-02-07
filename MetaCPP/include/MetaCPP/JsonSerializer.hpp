@@ -9,7 +9,7 @@
 namespace metacpp {
 	class JsonSerializer {
 	public:
-		JsonSerializer(Storage* storage, bool use_references_table = false, int max_pointer_depth = 7);
+		JsonSerializer(Storage* storage, bool use_references_table = true, int max_pointer_depth = 7);
 
 		template<typename T>
 		std::string Serialize(T* obj, const bool pretty = false);
@@ -46,7 +46,7 @@ namespace metacpp {
 		if (type == nullptr) {
 			return 0;
 		}
-		void* ptr = type->allocate();
+		void* ptr = type->Allocate();
 		DeSerialize(type, json, ptr);
 		return reinterpret_cast<T*>(ptr);
 	}

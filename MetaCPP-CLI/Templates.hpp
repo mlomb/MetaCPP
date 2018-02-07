@@ -15,15 +15,6 @@ namespace metacpp { namespace templates {
 	METACPP_TEMPLATE(source)
 	#include "templates/source.template"
 	;
-
-	/* Dump templates */
-	METACPP_TEMPLATE(dump_storage)
-	#include "templates/dump_storage.template"
-	;
-
-	METACPP_TEMPLATE(dump_type)
-	#include "templates/dump_type.template"
-	;
 } }
 
 #endif

@@ -1,0 +1,8 @@
+R"(
+				QualifiedType qualifiedType;
+				{{#typeID}}
+				qualifiedType.SetTypeID({{typeID}});
+				qualifiedType.SetConst({{const}});
+				qualifiedType.SetQualifierOperator(static_cast<QualifierOperator>({{operator}}));
+				{{/typeID}}
+)"

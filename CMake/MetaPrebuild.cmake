@@ -5,7 +5,7 @@
 #
 # set(META_CPP_BIN "Tools/MetaCPPCLI.exe")
 #
-# You have to me using CMake 3.1 or newer (target_sources)
+# You have to be using CMake 3.1 or newer (target_sources)
 # !!!!!
 
 # This should be called after configuring the whole project
@@ -53,15 +53,6 @@ macro(meta_generate PROJECT_NAME IN_SOURCE OUT_HEADER OUT_SOURCE ADDITIONAL_FLAG
 	
 	set(CMD "${META_CPP_EXE} \"${IN_SOURCE_PATH}\" -out-header \"${OUT_HEADER_PATH}\" -out-source \"${OUT_SOURCE_PATH}\" ${FLAGS}")
 	separate_arguments(CMD)
-	
-	# command
-	#add_custom_target(
-	#	"${PROJECT_NAME}_metacpp_gen"
-	#	COMMAND ${CMD}
-	#	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	#)
-	#add_dependencies(${PROJECT_NAME} "${PROJECT_NAME}_metacpp_gen")
-	#set_source_files_properties(${OUT_HEADER_PATH} ${OUT_SOURCE_PATH} PROPERTIES GENERATED TRUE)
 	
 	add_custom_command(
 		TARGET ${PROJECT_NAME}

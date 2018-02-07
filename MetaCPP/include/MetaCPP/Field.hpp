@@ -7,43 +7,43 @@
 #include "TypeID.hpp"
 #include "QualifiedName.hpp"
 #include "QualifiedType.hpp"
-#include "Exportable.hpp"
 
 namespace metacpp {
-	class Field : public Exportable {
+	class Field {
 	public:
-		Field(QualifiedType* type, const QualifiedName& qName);
+		Field(const QualifiedType& type, const QualifiedName& qName);
 
-		QualifiedType* getType() const;
-		TypeID getOwnerType() const;
-		size_t getOffset() const;
-		const QualifiedName& getQualifiedName() const;
+		const QualifiedType& GetType() const;
+		TypeID GetOwnerType() const;
+		size_t GetOffset() const;
+		const QualifiedName& GetQualifiedName() const;
 
-		void setOwner(const TypeID ownerTypeId);
-		void setOffset(const size_t bytes);
+		void SetOwner(const TypeID ownerTypeId);
+		void SetOffset(const size_t bytes);
 
 		template<typename T>
-		T* get(const void* object) const;
+		T* Get(const void* object) const;
 		template<typename T>
-		void set(const T& value, const void* object) const;
+		void Set(const T& value, const void* object) const;
 
-		mustache::data asMustache() const override;
 	private:
 		TypeID m_Owner;
-		QualifiedType* m_Type;
+		QualifiedType m_Type;
 		QualifiedName m_QualifiedName;
 
 		size_t m_OffsetInBytes;
+
+		friend class MetaExporter;
 	};
 
 	template<typename T>
-	inline T* Field::get(const void* object) const
+	inline T* Field::Get(const void* object) const
 	{
 		return reinterpret_cast<T*>((size_t)object + m_OffsetInBytes);
 	}
 
 	template<typename T>
-	inline void Field::set(const T& value, const void* object) const
+	inline void Field::Set(const T& value, const void* object) const
 	{
 		T& obj_value = *reinterpret_cast<T*>((size_t)object + m_OffsetInBytes);
 		obj_value = value;

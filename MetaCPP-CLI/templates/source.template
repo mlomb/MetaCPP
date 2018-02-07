@@ -22,10 +22,10 @@ namespace metacpp { namespace generated {
 		{{#types}}
 		{
 			Type* type = new Type({{id}}, QualifiedName("{{qualifiedName}}"));
-			type->setSize({{size}});
-			type->setKind(static_cast<TypeKind>({{kind}}));
-			type->setAccess(static_cast<AccessSpecifier>({{access}}));
-			type->setPolymorphic({{polymorphic}});
+			type->SetSize({{size}});
+			type->SetKind(static_cast<TypeKind>({{kind}}));
+			type->SetAccess(static_cast<AccessSpecifier>({{access}}));
+			type->SetPolymorphic({{polymorphic}});
 			
 			// Base Types
 			{{#baseTypes}}
@@ -35,13 +35,13 @@ namespace metacpp { namespace generated {
 #include "source.qualifiedType.template"
 + R"(
 				{{/qualifiedType}}
-				type->addBaseType(qualifiedType, static_cast<AccessSpecifier>({{access}}));
+				type->AddBaseType(qualifiedType, static_cast<AccessSpecifier>({{access}}));
 			}
 			{{/baseTypes}}
 			
 			// Derived Types
 			{{#derivedTypes}}
-			type->addDerivedType({{derivedTypeId}});
+			type->AddDerivedType({{derivedTypeId}});
 			{{/derivedTypes}}
 			
 			// Template arguments
@@ -50,7 +50,7 @@ namespace metacpp { namespace generated {
 )" +
 #include "source.qualifiedType.template"
 + R"(
-				type->addTemplateArgument(qualifiedType);
+				type->AddTemplateArgument(qualifiedType);
 			}
 			{{/templateArguments}}
 			
@@ -63,9 +63,9 @@ namespace metacpp { namespace generated {
 + R"(
 				{{/qualifiedType}}
 				
-				Field* field = new Field(qualifiedType, QualifiedName("{{qualifiedName}}"));
-				field->setOffset({{offset}});
-				type->addField(field);
+				Field field(qualifiedType, QualifiedName("{{qualifiedName}}"));
+				field.SetOffset({{offset}});
+				type->AddField(field);
 			}
 			{{/fields}}
 			
@@ -76,7 +76,7 @@ namespace metacpp { namespace generated {
 #if ({{polymorphic}} == 1) // polymorphic
 			// Dynamic Casts
 			{{#derivedTypes}}
-			storage->addDynamicCast({{id}}, {{derivedTypeId}}, [](void* ptr) -> void* {
+			storage->AddDynamicCast({{id}}, {{derivedTypeId}}, [](void* ptr) -> void* {
 				{{qualifiedName}}* obj = reinterpret_cast<{{qualifiedName}}*>(ptr);
 				return dynamic_cast<{{derivedQualifiedName}}*>(obj);
 			});
@@ -85,7 +85,7 @@ namespace metacpp { namespace generated {
 			
 #if ({{hasDefaultConstructor}} == 1) // hasDefaultConstructor
 			// Constructor
-			type->setConstructor([](void* ptr) -> void* {
+			type->SetConstructor([](void* ptr) -> void* {
 				return new (ptr) {{qualifiedName}};
 			});
 #endif
@@ -96,10 +96,8 @@ namespace metacpp { namespace generated {
 			public:
 				SequentialContainerSpecialization(Type* type) : m_Type(type) {};
 				
-				QualifiedType* ValuesType() const override {
-					auto args = m_Type->getTemplateArguments();
-					if(args.size() == 0) return 0;
-					return args[0];
+				QualifiedType ValuesType() const override {
+					return m_Type->GetTemplateArguments().at(0);
 				}
 			
 				size_t Size(void* container) const override {
@@ -122,12 +120,12 @@ namespace metacpp { namespace generated {
 				
 				Type* m_Type;
 			};
-			type->setContainer(new SequentialContainerSpecialization(type));
+			type->SetContainer(new SequentialContainerSpecialization(type));
 #endif
 
 #endif
 
-			storage->addType(type);
+			storage->AddType(type);
 		}
 		{{/types}}
 		
@@ -135,7 +133,7 @@ namespace metacpp { namespace generated {
 		// IDs
 		//////////////////////////////////////////////
 		{{#ids}}
-		storage->assignTypeID("{{qualifiedName}}", {{id}});
+		storage->AssignTypeID("{{qualifiedName}}", {{id}});
 		{{/ids}}
 	}
 } }

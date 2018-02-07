@@ -34,8 +34,6 @@ int main(int argc, const char** argv) {
 		delete scraper;
 	}
 
-	storage->dump();
-
 	// Export Metadata
 	{
 		metacpp::MetaExporter exporter(storage);

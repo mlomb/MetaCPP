@@ -9,6 +9,9 @@ using namespace kainjow;
 
 namespace metacpp {
 	class Storage;
+	class Type;
+	class QualifiedType;
+	class Field;
 
 	class MetaExporter {
 	public:
@@ -19,6 +22,11 @@ namespace metacpp {
 	private:
 		std::string GenerateSourceFile(const std::vector<std::string>& includes, mustache::data& storageData);
 		std::string GenerateHeaderFile(const std::vector<std::string>& includes, mustache::data& storageData);
+
+		mustache::data ExportStorage();
+		mustache::data ExportType(const Type* type);
+		mustache::data ExportQualifiedType(const QualifiedType& qtype);
+		mustache::data ExportField(const Field& field);
 
 		void SetIncludes(const std::vector<std::string>& includes, mustache::data& data);
 

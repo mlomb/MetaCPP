@@ -5,18 +5,19 @@
 
 namespace metacpp {
 	QualifiedType::QualifiedType()
+		: m_Type(0), m_Operator(QualifierOperator::VALUE), m_Const(false)
 	{
 	}
 
-	std::string QualifiedType::getQualifiedName(const Storage* storage) const
+	std::string QualifiedType::GetQualifiedName(const Storage* storage) const
 	{
-		Type* type = storage->getType(m_Type);
+		Type* type = storage->GetType(m_Type);
 
 		std::string result = "";
 		if (m_Const)
 			result += "const ";
 		if (type)
-			result += type->getQualifiedName().fullQualified();
+			result += type->GetQualifiedName().FullQualified();
 		else
 			result += "UNKNOWN";
 
@@ -32,47 +33,33 @@ namespace metacpp {
 
 		return result;
 	}
-
-	mustache::data QualifiedType::asMustache() const
-	{
-		mustache::data data;
-		data["typeID"] = std::to_string(m_Type);
-		data["const"] = std::to_string(m_Const);
-		data["operator"] = std::to_string(m_Operator);
-		return data;
-	}
-
-	std::string QualifiedType::dumpTemplate()
-	{
-		return std::string();
-	}
-
-	void QualifiedType::setTypeID(const TypeID typeID)
+	
+	void QualifiedType::SetTypeID(const TypeID typeID)
 	{
 		m_Type = typeID;
 	}
 
-	void QualifiedType::setQualifierOperator(const QualifierOperator qualifierOperator)
+	void QualifiedType::SetQualifierOperator(const QualifierOperator qualifierOperator)
 	{
 		m_Operator = qualifierOperator;
 	}
 
-	void QualifiedType::setConst(const bool is_const)
+	void QualifiedType::SetConst(const bool is_const)
 	{
 		m_Const = is_const;
 	}
 
-	TypeID QualifiedType::getTypeID() const
+	TypeID QualifiedType::GetTypeID() const
 	{
 		return m_Type;
 	}
 
-	QualifierOperator QualifiedType::getQualifierOperator() const
+	QualifierOperator QualifiedType::GetQualifierOperator() const
 	{
 		return m_Operator;
 	}
 
-	bool QualifiedType::isConst() const
+	bool QualifiedType::IsConst() const
 	{
 		return m_Const;
 	}

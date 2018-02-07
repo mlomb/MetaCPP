@@ -21,12 +21,12 @@ namespace metacpp {
 		void ScrapeNamedDecl(const clang::NamedDecl* namedDecl, Type* parent);
 
 		Type* ScrapeCXXRecordDecl(const clang::CXXRecordDecl* cxxRecordDecl, Type* parent);
-		std::vector<QualifiedType*> ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName);
+		std::vector<QualifiedType> ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName);
 		Type* ScrapeType(const clang::Type* cType);
 		void ScrapeFieldDecl(const clang::FieldDecl* fieldDecl, Type* parent);
 		void ScrapeMethodDecl(const clang::CXXMethodDecl* cxxMethodDecl, Type* parent);
 
-		QualifiedType* ResolveQualType(clang::QualType qualType);
+		QualifiedType ResolveQualType(clang::QualType qualType);
 		std::vector<std::string> ScrapeAnnotations(const clang::Decl* decl);
 
 		/* Utility */

@@ -7,25 +7,25 @@ namespace metacpp {
 	}
 
 	Method::Method(const QualifiedName& qName)
-		: m_QualifiedName(qName)
+		: m_QualifiedName(qName), m_Owner(0)
 	{
 	}
 
-	TypeID Method::getOwnerType() const {
+	TypeID Method::GetOwnerType() const {
 		return m_Owner;
 	}
 
-	const QualifiedName& Method::getQualifiedName() const
+	const QualifiedName& Method::GetQualifiedName() const
 	{
 		return m_QualifiedName;
 	}
 
-	void Method::setOwner(const TypeID ownerTypeId)
+	void Method::SetOwner(const TypeID ownerTypeId)
 	{
 		m_Owner = ownerTypeId;
 	}
 
-	void Method::addParameter(const MethodParameter& parameter)
+	void Method::AddParameter(const MethodParameter& parameter)
 	{
 		m_Parameters.push_back(parameter);
 	}

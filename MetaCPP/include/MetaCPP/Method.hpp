@@ -7,8 +7,6 @@
 #include "TypeID.hpp"
 #include "QualifiedName.hpp"
 #include "QualifiedType.hpp"
-#include "Exportable.hpp"
-
 namespace metacpp {
 	class MethodParameter {
 	public:
@@ -19,23 +17,25 @@ namespace metacpp {
 		QualifiedType m_Type;
 	};
 
-	class Method : public Exportable {
+	class Method {
 	public:
 		Method(const QualifiedName& qName);
 
-		TypeID getOwnerType() const;
-		const QualifiedName& getQualifiedName() const;
+		TypeID GetOwnerType() const;
+		const QualifiedName& GetQualifiedName() const;
 
-		void setOwner(const TypeID ownerTypeId);
+		void SetOwner(const TypeID ownerTypeId);
 
-		void addParameter(const MethodParameter& parameter);
+		void AddParameter(const MethodParameter& parameter);
 
 	private:
 		TypeID m_Owner;
 		QualifiedName m_QualifiedName;
 
-		bool m_Constructor, m_Destructor, m_Static, m_Virtual;
+		bool m_Static, m_Virtual;
 		std::vector<MethodParameter> m_Parameters;
+
+		friend class MetaExporter;
 	};
 }
 

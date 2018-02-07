@@ -1,7 +1,0 @@
-R"(--- STORAGE --- {{test}}
-Types:
-{{#types}})" +
-#include "dump_type.template"
-+ R"({{/types}}
-
-)"

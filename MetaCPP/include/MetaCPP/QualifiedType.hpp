@@ -4,7 +4,6 @@
 #include <string>
 
 #include "TypeID.hpp"
-#include "Exportable.hpp"
 
 namespace metacpp {
 	class Storage;
@@ -15,28 +14,26 @@ namespace metacpp {
 		VALUE
 	};
 
-	class QualifiedType : public Exportable {
+	class QualifiedType {
 	public:
 		QualifiedType();
 
-		void setTypeID(const TypeID typeID);
-		void setQualifierOperator(const QualifierOperator qualifierOperator);
-		void setConst(const bool is_const);
+		void SetTypeID(const TypeID typeID);
+		void SetQualifierOperator(const QualifierOperator qualifierOperator);
+		void SetConst(const bool is_const);
 
-		TypeID getTypeID() const;
-		QualifierOperator getQualifierOperator() const;
-		bool isConst() const;
+		TypeID GetTypeID() const;
+		QualifierOperator GetQualifierOperator() const;
+		bool IsConst() const;
 
-		std::string getQualifiedName(const Storage* storage) const;
+		std::string GetQualifiedName(const Storage* storage) const;
 
-		mustache::data asMustache() const override;
-
-	private:
-		std::string dumpTemplate() override;
 	protected:
 		QualifierOperator m_Operator;
 		bool m_Const;
 		TypeID m_Type;
+
+		friend class MetaExporter;
 	};
 }
 

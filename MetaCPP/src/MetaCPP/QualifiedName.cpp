@@ -65,7 +65,7 @@ namespace metacpp {
 		}
 	}
 
-	std::string QualifiedName::fullQualified() const {
+	std::string QualifiedName::FullQualified() const {
 		std::stringstream ss;
 		for (const std::string& s : m_Namespace)
 			ss << s << "::";
@@ -79,22 +79,22 @@ namespace metacpp {
 		return ss.str();
 	}
 
-	std::string QualifiedName::getName() const
+	std::string QualifiedName::GetName() const
 	{
 		return m_Name;
 	}
 	
-	std::string QualifiedName::getTemplateArgs() const
+	std::string QualifiedName::GetTemplateArgs() const
 	{
 		return m_TemplateArgs;
 	}
 
-	std::string QualifiedName::getTemplatedName() const
+	std::string QualifiedName::GetTemplatedName() const
 	{
 		return m_Name + (m_TemplateArgs.size() > 0 ? "<" + m_TemplateArgs + ">" : "");
 	}
 
-	Namespace QualifiedName::getNamespace() const
+	const Namespace& QualifiedName::GetNamespace() const
 	{
 		return m_Namespace;
 	}

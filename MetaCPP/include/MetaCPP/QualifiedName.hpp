@@ -14,11 +14,11 @@ namespace metacpp {
 		QualifiedName(const Namespace& namespace_, const std::string& name, const std::string& templateArgs = "");
 		QualifiedName(std::string fullQualified);
 
-		std::string getName() const;
-		std::string getTemplateArgs() const;
-		std::string getTemplatedName() const;
-		Namespace getNamespace() const;
-		std::string fullQualified() const;
+		std::string GetName() const;
+		std::string GetTemplateArgs() const;
+		std::string GetTemplatedName() const;
+		std::string FullQualified() const;
+		const Namespace& GetNamespace() const;
 
 	private:
 		Namespace m_Namespace;

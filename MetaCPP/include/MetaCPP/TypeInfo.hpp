@@ -5,8 +5,6 @@
 #include "Type.hpp"
 
 namespace metacpp {
-	class Type;
-
 	template<typename T>
 	struct TypeInfo {
 		static TypeID ID;

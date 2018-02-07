@@ -2,13 +2,13 @@
 #define METACPP_TYPE_HPP
 
 #include <vector>
+#include <functional>
 
 #include "TypeID.hpp"
 #include "QualifiedName.hpp"
 #include "Field.hpp"
 #include "Method.hpp"
 #include "Container.hpp"
-#include "Exportable.hpp"
 
 namespace metacpp {
 	enum TypeKind {
@@ -24,62 +24,58 @@ namespace metacpp {
 	};
 
 	struct BaseType {
-		QualifiedType* type;
+		QualifiedType type;
 		AccessSpecifier access;
 	};
 
-	class Type : public Exportable {
+	class Type {
 	public:
 		typedef std::function<void*(void*)> Constructor;
 
 		Type(const TypeID id, const QualifiedName& qName);
 
-		TypeID getID() const;
-		const QualifiedName& getQualifiedName() const;
-		TypeKind getKind() const;
-		AccessSpecifier getAccess() const;
-		size_t getSize() const;
-		bool isPrimitive() const;
-		bool isStruct() const;
-		bool isClass() const;
-		bool isPolymorphic() const;
-		bool isValid() const;
-		bool isSTL() const;
-		bool isSequentialContainer() const;
-		bool isAssociativeContainer() const;
-		bool isContainer() const;
-		const std::vector<Field*>& getFields() const;
-		const std::vector<QualifiedType*> getTemplateArguments() const;
-		const std::vector<BaseType>& getBaseTypes() const;
-		const std::vector<TypeID>& getDerivedTypes() const;
-		Container* getContainer() const;
+		TypeID GetTypeID() const;
+		const QualifiedName& GetQualifiedName() const;
+		TypeKind GetKind() const;
+		AccessSpecifier GetAccess() const;
+		size_t GetSize() const;
+		bool IsPrimitive() const;
+		bool IsStruct() const;
+		bool IsClass() const;
+		bool IsPolymorphic() const;
+		bool IsValid() const;
+		bool IsSTL() const;
+		bool IsSequentialContainer() const;
+		bool IsAssociativeContainer() const;
+		bool IsContainer() const;
+		const std::vector<Field>& GetFields() const;
+		const std::vector<QualifiedType> GetTemplateArguments() const;
+		const std::vector<BaseType>& GetBaseTypes() const;
+		const std::vector<TypeID>& GetDerivedTypes() const;
+		Container* GetContainer() const;
 
-		void* allocate(void* ptr = 0) const;
+		void* Allocate(void* ptr = 0) const;
 
-		void setKind(const TypeKind kind);
-		void setAccess(const AccessSpecifier access);
-		void setSize(const size_t bytes);
-		void setPolymorphic(const bool polymorphic);
-		void setHasDefaultConstructor(const bool hasDefaultConstructor);
-		void setConstructor(const Constructor constructor);
-		void setContainer(Container* container);
+		void SetKind(const TypeKind kind);
+		void SetAccess(const AccessSpecifier access);
+		void SetSize(const size_t bytes);
+		void SetPolymorphic(const bool polymorphic);
+		void SetHasDefaultConstructor(const bool hasDefaultConstructor);
+		void SetConstructor(const Constructor constructor);
+		void SetContainer(Container* container);
 
-		void addBaseType(QualifiedType* baseType, const AccessSpecifier access);
-		void addDerivedType(TypeID typeID);
-		void addTemplateArgument(QualifiedType* arg, int pos = -1);
-		void addField(Field* field);
-		void addMethod(Method* method);
-
-		mustache::data asMustache() const override;
-
+		void AddBaseType(const QualifiedType& baseType, const AccessSpecifier access);
+		void AddDerivedType(const TypeID typeID);
+		void AddTemplateArgument(const QualifiedType& arg, const int pos = -1);
+		void AddField(Field& field);
+		void AddMethod(Method& method);
+		
 	private:
-		std::string dumpTemplate() override;
-
 		const TypeID m_ID;
 		const QualifiedName m_QualifiedName;
-		size_t m_SizeInBytes = -1;
-		TypeKind m_Kind = PRIMITIVE;
-		AccessSpecifier m_Access = PUBLIC;
+		size_t m_SizeInBytes;
+		TypeKind m_Kind;
+		AccessSpecifier m_Access;
 		bool m_Polymorphic;
 		bool m_HasDefaultConstructor;
 		Container* m_Container;
@@ -87,9 +83,11 @@ namespace metacpp {
 
 		std::vector<BaseType> m_BaseTypes;
 		std::vector<TypeID> m_DerivedTypes;
-		std::vector<QualifiedType*> m_TemplateArguments;
-		std::vector<Field*> m_Fields;
-		std::vector<Method*> m_Methods;
+		std::vector<QualifiedType> m_TemplateArguments;
+		std::vector<Field> m_Fields;
+		std::vector<Method> m_Methods;
+
+		friend class MetaExporter;
 	};
 }
 

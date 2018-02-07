@@ -23,18 +23,18 @@ namespace metacpp {
 	};
 
 	static bool IsBasicType(const Type* type) {
-		return type->isPrimitive() || type->getID() == TypeInfo<std::string>::ID;
+		return type->IsPrimitive() || type->GetTypeID() == TypeInfo<std::string>::ID;
 	}
 
 	Value SerializeBasicType(const Type* type, void* ptr, SerializationContext& context);
-	Value SerializeType(const QualifiedType* qtype, void* ptr, const int pointer_recursion, SerializationContext& context);
+	Value SerializeType(const QualifiedType& qtype, void* ptr, const int pointer_recursion, SerializationContext& context);
 	Value SerializeObject(const Type* type, void* ptr, const bool is_reference, const int pointer_recursion, SerializationContext& context);
 
 	Value SerializeBasicType(const Type* type, void* ptr, SerializationContext& context) {
 		Value value;
 		value.SetNull();
 
-		const TypeID id = type->getID();
+		const TypeID id = type->GetTypeID();
 
 		#define FIELD_SET(set_func, t) \
 		else if (id == TypeInfo< t >::ID) { value.set_func(*reinterpret_cast< const t* >(ptr)); }
@@ -59,17 +59,17 @@ namespace metacpp {
 		return value;
 	}
 
-	Value SerializeType(const QualifiedType* qtype, void* ptr, const int pointer_recursion, SerializationContext& context) {
+	Value SerializeType(const QualifiedType& qtype, void* ptr, const int pointer_recursion, SerializationContext& context) {
 		// don't serialize const fields
-		if (qtype->isConst())
+		if (qtype.IsConst())
 			return Value();
 
-		const Type* type = context.serializer->GetStorage()->getType(qtype->getTypeID());
+		const Type* type = context.serializer->GetStorage()->GetType(qtype.GetTypeID());
 
 		if(type == 0)
 			return Value();
 
-		switch (qtype->getQualifierOperator())
+		switch (qtype.GetQualifierOperator())
 		{
 		case QualifierOperator::VALUE:
 			if (IsBasicType(type)) {
@@ -118,14 +118,14 @@ namespace metacpp {
 		Value object;
 		object.SetNull();
 		
-		if (type->isSequentialContainer()) {
-			auto sc = static_cast<SequentialContainer*>(type->getContainer());
+		if (type->IsSequentialContainer()) {
+			auto sc = static_cast<SequentialContainer*>(type->GetContainer());
 			if (!sc)
 				return object;
 
 			size_t size = sc->Size(ptr);
-			QualifiedType* item_qtype = sc->ValuesType();
-			if (!item_qtype)
+			const QualifiedType item_qtype = sc->ValuesType();
+			if (item_qtype.GetTypeID() == 0)
 				return object;
 
 			object.SetArray();
@@ -136,29 +136,29 @@ namespace metacpp {
 
 			return object;
 		}
-		if (type->isSTL())
+		if (type->IsSTL())
 			return object;
 
 		object.SetObject();
 
-		if (type->isPolymorphic()) {
+		if (type->IsPolymorphic()) {
 			Value rc;
-			rc.SetString(type->getQualifiedName().getTemplatedName(), context.document->GetAllocator());
+			rc.SetString(type->GetQualifiedName().GetTemplatedName(), context.document->GetAllocator());
 			object.AddMember("reflection_class", rc, context.document->GetAllocator());
 		}
 
-		std::vector<Field*> fields = context.serializer->GetStorage()->getAllFields(type);
+		std::vector<Field>& fields = context.serializer->GetStorage()->GetAllFields(type);
 
-		for (Field* field : fields) {
-			const QualifiedType* field_qtype = field->getType();
+		for (const Field& field : fields) {
+			const QualifiedType& field_qtype = field.GetType();
 
-			void* field_ptr = field->get<void*>(ptr);
+			void* field_ptr = field.Get<void*>(ptr);
 			Value field_value = SerializeType(field_qtype, field_ptr, pointer_recursion, context);
 
 			if (field_value.IsNull())
 				continue;
 
-			Value field_name(field->getQualifiedName().getName().c_str(), context.document->GetAllocator());
+			Value field_name(field.GetQualifiedName().GetName().c_str(), context.document->GetAllocator());
 
 			object.AddMember(field_name, field_value, context.document->GetAllocator());
 		}
@@ -204,7 +204,7 @@ namespace metacpp {
 
 	void DeSerializeVoidPtr(void* ptr_data, void* ptr);
 	void DeSerializeBasicType(const TypeID id, const Value& value, void* ptr);
-	void DeSerializeType(const QualifiedType* qtype, const Value& value, void* obj, SerializationContext& context);
+	void DeSerializeType(const QualifiedType& qtype, const Value& value, void* obj, SerializationContext& context);
 	void DeSerializeObject(const Type* type, const Value& value, void* obj, SerializationContext& context);
 
 	void DeSerializeVoidPtr(void* ptr_data, void* ptr)
@@ -251,7 +251,7 @@ namespace metacpp {
 			}
 		}
 
-		void* ptr = type_to_deserialize->allocate();
+		void* ptr = type_to_deserialize->Allocate();
 
 		return std::make_pair(type_to_deserialize, ptr);
 	}
@@ -278,14 +278,14 @@ namespace metacpp {
 		}
 	}
 
-	void DeSerializeType(const QualifiedType* qtype, const Value& value, void* obj, SerializationContext& context) {
+	void DeSerializeType(const QualifiedType& qtype, const Value& value, void* obj, SerializationContext& context) {
 		if (value.IsNull())
 			return;
 
-		Type* type = context.serializer->GetStorage()->getType(qtype->getTypeID());
-		TypeID id = type->getID();
+		Type* type = context.serializer->GetStorage()->GetType(qtype.GetTypeID());
+		TypeID id = type->GetTypeID();
 
-		switch (qtype->getQualifierOperator()) {
+		switch (qtype.GetQualifierOperator()) {
 		case QualifierOperator::VALUE:
 			if (IsBasicType(type)) {
 				DeSerializeBasicType(id, value, obj);
@@ -293,20 +293,20 @@ namespace metacpp {
 			else if (value.IsObject()) {
 				DeSerializeObject(type, value, obj, context);
 			}
-			else if (type->isSequentialContainer() && value.IsArray()) {
-				auto sc = static_cast<SequentialContainer*>(type->getContainer());
+			else if (type->IsSequentialContainer() && value.IsArray()) {
+				auto sc = static_cast<SequentialContainer*>(type->GetContainer());
 				if (!sc) return;
 
-				QualifiedType* item_qtype = sc->ValuesType();
-				if (!item_qtype) return;
-				Type* item_type = context.serializer->GetStorage()->getType(item_qtype->getTypeID());
+				const QualifiedType item_qtype = sc->ValuesType();
+				if (item_qtype.GetTypeID() == 0) return;
+				Type* item_type = context.serializer->GetStorage()->GetType(item_qtype.GetTypeID());
 				if (!item_type) return;
 
 				for (const Value& item : value.GetArray()) {
-					switch (item_qtype->getQualifierOperator()) {
+					switch (item_qtype.GetQualifierOperator()) {
 					case QualifierOperator::VALUE:
 					{
-						void* temp_item_ptr = item_type->allocate();
+						void* temp_item_ptr = item_type->Allocate();
 
 						DeSerializeType(item_qtype, item, temp_item_ptr, context);
 
@@ -335,16 +335,16 @@ namespace metacpp {
 	}
 
 	void DeSerializeObject(const Type* type, const Value& value, void* obj, SerializationContext& context) {
-		const std::vector<Field*>& fields = type->getFields();
+		const std::vector<Field>& fields = context.serializer->GetStorage()->GetAllFields(type);
 
 		for (auto itr = value.MemberBegin(); itr != value.MemberEnd(); ++itr) {
 			auto& member = *itr;
 
-			for (Field* field : fields) {
-				std::string field_name = field->getQualifiedName().getName();
+			for (const Field& field : fields) {
+				std::string field_name = field.GetQualifiedName().GetName();
 				if (field_name == member.name) {
-					void* field_ptr = field->get<void*>(obj);
-					DeSerializeType(field->getType(), member.value, field_ptr, context);
+					void* field_ptr = field.Get<void*>(obj);
+					DeSerializeType(field.GetType(), member.value, field_ptr, context);
 					break;
 				}
 			}
