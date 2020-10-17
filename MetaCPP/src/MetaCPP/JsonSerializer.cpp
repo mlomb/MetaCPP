@@ -153,15 +153,31 @@ namespace metacpp {
 		for (const Field& field : fields) {
 			const QualifiedType& field_qtype = field.GetType();
 
-			void* field_ptr = field.Get<void*>(ptr);
-			Value field_value = SerializeType(field_qtype, field_ptr, pointer_recursion, context);
+			if(field.GetType().GetArraySize() == 1)
+            {
+                void *field_ptr = field.Get<void>(ptr);
+                Value field_value = SerializeType(field_qtype, field_ptr, pointer_recursion, context);
 
-			if (field_value.IsNull())
-				continue;
+                if (!field_value.IsNull()) {
+					Value field_name(field.GetQualifiedName().GetName().c_str(), context.document->GetAllocator());
+                    object.AddMember(field_name, field_value, context.document->GetAllocator());
+                }
+            } else {
+                Value arrayObject;
+                arrayObject.SetArray();
+                const Type* elemType = context.serializer->GetStorage()->GetType(field.GetType().GetTypeID());
+                char* baseAddress = field.Get<char>(ptr);
+                for (std::size_t index = 0; index < field.GetType().GetArraySize(); ++index) {
+                    void *field_ptr = reinterpret_cast<void*>(baseAddress + elemType->GetSize() * index);
+                    Value field_value = SerializeType(field_qtype, field_ptr, pointer_recursion, context);
 
-			Value field_name(field.GetQualifiedName().GetName().c_str(), context.document->GetAllocator());
-
-			object.AddMember(field_name, field_value, context.document->GetAllocator());
+                    if (!field_value.IsNull()) {
+                        arrayObject.PushBack(field_value, context.document->GetAllocator());
+                    }
+                }
+                Value field_name(field.GetQualifiedName().GetName().c_str(), context.document->GetAllocator());
+                object.AddMember(field_name, arrayObject, context.document->GetAllocator());
+            }
 		}
 		
 		if (is_reference && context.serializer->UsingReferencesTable()) {
@@ -280,7 +296,14 @@ namespace metacpp {
 		}
 	}
 
-	void DeSerializeType(const QualifiedType& qtype, const Value& value, void* obj, SerializationContext& context) {
+    void
+    DeSerializeArray(const Value &value, void *obj, SerializationContext &context, const SequentialContainer *sc,
+                     const QualifiedType &item_qtype, const Type *item_type);
+
+    void
+    DeSerializeValue(const Value &value, void *obj, SerializationContext &context, const Type *type, TypeID id);
+
+    void DeSerializeType(const QualifiedType& qtype, const Value& value, void* obj, SerializationContext& context) {
 		if (value.IsNull())
 			return;
 
@@ -289,51 +312,14 @@ namespace metacpp {
 
 		switch (qtype.GetQualifierOperator()) {
 		case QualifierOperator::VALUE:
-			if (IsBasicType(type)) {
-				DeSerializeBasicType(id, value, obj);
-			}
-			else if (value.IsObject()) {
-				DeSerializeObject(type, value, obj, context);
-			}
-			else if (type->IsSequentialContainer() && value.IsArray()) {
-				auto sc = static_cast<SequentialContainer*>(type->GetContainer());
-				if (!sc) return;
-
-				const QualifiedType item_qtype = sc->ValuesType();
-				if (item_qtype.GetTypeID() == 0) return;
-				Type* item_type = context.serializer->GetStorage()->GetType(item_qtype.GetTypeID());
-				if (!item_type) return;
-
-				for (const Value& item : value.GetArray()) {
-					switch (item_qtype.GetQualifierOperator()) {
-                        case QualifierOperator::VALUE:
-                        {
-                            void* temp_item_ptr = item_type->Allocate();
-
-                            DeSerializeType(item_qtype, item, temp_item_ptr, context);
-
-                            sc->PushBack(obj, temp_item_ptr);
-
-                            item_type->Delete(temp_item_ptr);
-                            break;
-                        }
-                        case QualifierOperator::POINTER:
-                            {
-                            void *holder = 0;
-                            DeSerializePointer(item_type, item, &holder, context);
-
-                            sc->PushBack(obj, &holder);
-                            break;
-                        }
-                        case QualifierOperator::REFERENCE:
-                            {
-                            assert(false);
-                            break;
-                        }
-					}
-				}
-			}
-			break;
+		    if(qtype.GetArraySize() == 1) {
+                DeSerializeValue(value, obj, context, type, id);
+            }
+		    else {
+		        for(size_t index = 0; index < qtype.GetArraySize(); ++index)
+                    DeSerializeValue(value[index], reinterpret_cast<void*>(reinterpret_cast<char*>(obj) + type->GetSize() * index), context, type, id);
+            }
+		    break;
 		case QualifierOperator::POINTER:
 			DeSerializePointer(type, value, obj, context);
 			break;
@@ -343,7 +329,57 @@ namespace metacpp {
 		}
 	}
 
-	void DeSerializeObject(const Type* type, const Value& value, void* obj, SerializationContext& context) {
+    void
+    DeSerializeValue(const Value &value, void *obj, SerializationContext &context, const Type *type, TypeID id) {
+        if (IsBasicType(type)) {
+            DeSerializeBasicType(id, value, obj);
+        } else if (value.IsObject()) {
+            DeSerializeObject(type, value, obj, context);
+        } else if (type->IsSequentialContainer() && value.IsArray()) {
+            auto sc = static_cast<SequentialContainer *>(type->GetContainer());
+            if (sc) {
+                const QualifiedType item_qtype = sc->ValuesType();
+                if (item_qtype.GetTypeID() != 0) {
+                    Type *item_type = context.serializer->GetStorage()->GetType(item_qtype.GetTypeID());
+                    if (item_type) {
+                        DeSerializeArray(value, obj, context, sc, item_qtype, item_type);
+                    }
+                }
+            }
+        }
+    }
+
+    void
+    DeSerializeArray(const Value &value, void *obj, SerializationContext &context, const SequentialContainer *sc,
+                     const QualifiedType &item_qtype, const Type *item_type) {
+        for (const Value &item : value.GetArray()) {
+            switch (item_qtype.GetQualifierOperator()) {
+                case VALUE: {
+                    void *temp_item_ptr = item_type->Allocate();
+
+                    DeSerializeType(item_qtype, item, temp_item_ptr, context);
+
+                    sc->PushBack(obj, temp_item_ptr);
+
+                    item_type->Delete(temp_item_ptr);
+                    break;
+                }
+                case POINTER: {
+                    void *holder = 0;
+                    DeSerializePointer(item_type, item, &holder, context);
+
+                    sc->PushBack(obj, &holder);
+                    break;
+                }
+                case REFERENCE: {
+                    assert(false);
+                    break;
+                }
+            }
+        }
+    }
+
+    void DeSerializeObject(const Type* type, const Value& value, void* obj, SerializationContext& context) {
 		const std::vector<Field>& fields = context.serializer->GetStorage()->GetAllFields(type);
 
 		for (auto itr = value.MemberBegin(); itr != value.MemberEnd(); ++itr) {
@@ -352,8 +388,8 @@ namespace metacpp {
 			for (const Field& field : fields) {
 				std::string field_name = field.GetQualifiedName().GetName();
 				if (field_name == member.name) {
-					void* field_ptr = field.Get<void*>(obj);
-					DeSerializeType(field.GetType(), member.value, field_ptr, context);
+                    void *field_ptr = field.Get<void>(obj);
+                    DeSerializeType(field.GetType(), member.value, field_ptr, context);
 					break;
 				}
 			}

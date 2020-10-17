@@ -80,6 +80,12 @@ namespace metacpp {
 		return name == "vector" || name == "deque" || name == "array" || name == "list" || name == "forward_list";
 	}
 
+    bool Type::IsStaticArray() const
+    {
+        const std::string& name = m_QualifiedName.GetName();
+        return name == "array";
+    }
+
 	bool Type::IsAssociativeContainer() const
 	{
 		return false;
@@ -95,7 +101,7 @@ namespace metacpp {
 		return m_Fields;
 	}
 	
-	const std::vector<QualifiedType> Type::GetTemplateArguments() const
+	const std::vector<TemplateArgument> Type::GetTemplateArguments() const
 	{
 		return m_TemplateArguments;
 	}
@@ -192,7 +198,7 @@ namespace metacpp {
 		m_DerivedTypes.push_back(typeID);
 	}
 
-	void Type::AddTemplateArgument(const QualifiedType& arg, const int pos)
+	void Type::AddTemplateArgument(const TemplateArgument& arg, const int pos)
 	{
 		if (pos == -1)
 			m_TemplateArguments.push_back(arg);
@@ -211,4 +217,10 @@ namespace metacpp {
 		method.SetOwner(m_ID);
 		m_Methods.emplace_back(method);
 	}
+
+    bool Type::HasSize() const
+    {
+        const std::string& name = m_QualifiedName.GetName();
+        return name != "void" && name != "_Alloc_hider";
+    }
 }

@@ -75,6 +75,8 @@ namespace metacpp {
 		if (type) {
 			const clang::CXXRecordDecl* typeCxxRecordDecl = cType->getAsCXXRecordDecl();
 
+			//cxxRecordDecl->dump();
+
 			type->SetAccess(TransformAccess(cxxRecordDecl->getAccess()));
 			type->SetHasDefaultConstructor(!typeCxxRecordDecl->hasUserProvidedDefaultConstructor() && typeCxxRecordDecl->needsImplicitDefaultConstructor());
             type->SetHasDefaultDestructor(typeCxxRecordDecl->needsImplicitDestructor());
@@ -97,39 +99,48 @@ namespace metacpp {
 		return type;
 	}
 
-	std::vector<QualifiedType> ASTScraper::ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName)
+    std::vector<TemplateArgument> ASTScraper::ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName)
 	{
 		std::string typeName = cxxRecordDecl->getQualifiedNameAsString();
-		std::vector<QualifiedType> templateArgs;
+        std::vector<TemplateArgument> templateArgs;
 
 		// Template arguments
 		auto templateDecl = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(cxxRecordDecl);
 		if (templateDecl) {
 			typeName += "<";
 
-			const clang::TemplateArgumentList& args = templateDecl->getTemplateArgs();
-
+            const clang::TemplateArgumentList& args = templateDecl->getTemplateArgs();
 			for (int i = 0; i < (int)args.size(); i++) {
 				const clang::TemplateArgument& arg = args[i];
 				if (i)
 					typeName += ",";
 
-				QualifiedType qualifiedType;
+				TemplateArgument argument;
 				switch (arg.getKind()) {
 					case clang::TemplateArgument::Type:
-						qualifiedType = ResolveQualType(arg.getAsType());
+                        argument = ResolveQualType(arg.getAsType());
 						break;
+				    case clang::TemplateArgument::Integral:
+                        argument = arg.getAsIntegral().getLimitedValue();
+				        break;
 					default:
 						std::cout << "Unsupported template argument!" << std::endl;
 						break;
 				}
 
-				if (qualifiedType.GetTypeID() != 0)
-					typeName += qualifiedType.GetQualifiedName(m_Storage);
-				else
-					typeName += "INVALID";
+				if(std::holds_alternative<QualifiedType>(argument)) {
+                    QualifiedType qualifiedType = std::get<QualifiedType>(argument);
+                    if (qualifiedType.GetTypeID() != 0)
+                        typeName += qualifiedType.GetQualifiedName(m_Storage);
+                    else
+                        typeName += "INVALID";
+                } else
+                {
+                    unsigned long long integral = std::get<unsigned long long>(argument);
+                    typeName += std::to_string(integral);
+                }
 
-				templateArgs.push_back(qualifiedType);
+				templateArgs.push_back(argument);
 			}
 
 			typeName += ">";
@@ -140,42 +151,51 @@ namespace metacpp {
 		return templateArgs;
 	}
 
-	Type* ASTScraper::ScrapeType(const clang::Type* cType)
+    Type* ASTScraper::ScrapeType(const clang::Type* cType)
 	{
 		QualifiedName qualifiedName;
 		metacpp::TypeKind kind;
-		std::vector<QualifiedType> templateArgs;
+		std::vector<TemplateArgument> templateArgs;
 
 		switch (cType->getTypeClass()) {
-		case clang::Type::TypeClass::Builtin:
-		{
-			static clang::LangOptions lang_opts;
-			static clang::PrintingPolicy printing_policy(lang_opts);
+            case clang::Type::TypeClass::Builtin:
+            {
+                static clang::LangOptions lang_opts;
+                static clang::PrintingPolicy printing_policy(lang_opts);
 
-			auto builtin = cType->getAs<clang::BuiltinType>();
-			std::string name = builtin->getName(printing_policy).str();
-			if (name == "_Bool")
-				name = "bool";
-			qualifiedName = QualifiedName({}, name);
-			kind = metacpp::TypeKind::PRIMITIVE;
-			break;
-		}
-		case clang::Type::TypeClass::Record:
-		{
-			auto cxxRecordDecl = cType->getAsCXXRecordDecl();
-			if (cxxRecordDecl->isThisDeclarationADefinition() == clang::VarDecl::DeclarationOnly)
-				return 0; // forward declaration
-			templateArgs = ResolveCXXRecordTemplate(cxxRecordDecl, qualifiedName);
+                auto builtin = cType->getAs<clang::BuiltinType>();
+                std::string name = builtin->getName(printing_policy).str();
+                if (name == "_Bool")
+                    name = "bool";
+                qualifiedName = QualifiedName({}, name);
+                kind = metacpp::TypeKind::PRIMITIVE;
+                break;
+            }
+            case clang::Type::TypeClass::Record:
+            {
+                auto cxxRecordDecl = cType->getAsCXXRecordDecl();
+                if (cxxRecordDecl->isThisDeclarationADefinition() == clang::VarDecl::DeclarationOnly) {
+                    if(cxxRecordDecl->getDeclKind() != clang::Decl::ClassTemplateSpecialization) {
+                        return 0; // forward declaration
+                    }
+                }
+                templateArgs = ResolveCXXRecordTemplate(cxxRecordDecl, qualifiedName);
 
-			if (qualifiedName.GetName().size() == 0)
-				return 0;
+                if (qualifiedName.GetName().size() == 0) {
+                    return 0;
+                }
 
-			kind = cType->isStructureType() ? metacpp::TypeKind::STRUCT : metacpp::TypeKind::CLASS;
-			break;
-		}
-		default:
-			std::cout << "Unsupported TypeClass " << cType->getTypeClassName() << std::endl;
-			return 0;
+                kind = cType->isStructureType() ? metacpp::TypeKind::STRUCT : metacpp::TypeKind::CLASS;
+                break;
+            }
+            case clang::Type::TypeClass::Pointer:
+                std::cout << "[Ignored TypeClass: " << cType->getTypeClassName() << "]" << std::endl;
+//                cType->dump();
+                return 0;
+            default:
+                std::cout << "[Unsupported TypeClass: " << cType->getTypeClassName() << "]" << std::endl;
+//                cType->dump();
+                return 0;
 		}
 		
 		TypeID typeId = m_Storage->AssignTypeID(qualifiedName.FullQualified());
@@ -184,34 +204,37 @@ namespace metacpp {
 			return m_Storage->GetType(typeId);
 
 		metacpp::Type* type = new metacpp::Type(typeId, qualifiedName);
-		
-		type->SetSize(m_Context->getTypeSize(cType) / 8);
+        
 		type->SetKind(kind);
         type->SetHasDefaultConstructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
         type->SetHasDefaultDestructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
 		type->SetPolymorphic(false);
 
-		if (auto cxxRecordDecl = cType->getAsCXXRecordDecl()) {
-			type->SetPolymorphic(cxxRecordDecl->isPolymorphic());
+        if (auto cxxRecordDecl = cType->getAsCXXRecordDecl()) {
+            if (cxxRecordDecl->getDeclKind() == clang::Decl::ClassTemplateSpecialization
+                && cxxRecordDecl->isThisDeclarationADefinition() == clang::VarDecl::DeclarationOnly) {
+                type->SetPolymorphic(false);
+            } else {
+                type->SetPolymorphic(cxxRecordDecl->isPolymorphic());
 
-			// Parse base classes
-			for (auto it = cxxRecordDecl->bases_begin(); it != cxxRecordDecl->bases_end(); it++)
-			{
-				QualifiedType base_qtype = ResolveQualType(it->getType());
-				type->AddBaseType(base_qtype, TransformAccess(it->getAccessSpecifier()));
+                // Parse base classes
+                for (auto it = cxxRecordDecl->bases_begin(); it != cxxRecordDecl->bases_end(); it++) {
+                    QualifiedType base_qtype = ResolveQualType(it->getType());
+                    type->AddBaseType(base_qtype, TransformAccess(it->getAccessSpecifier()));
 
-				if (it == cxxRecordDecl->bases_begin()) {
-					m_Storage->GetType(base_qtype.GetTypeID())->AddDerivedType(typeId);
-				}
-			}
-			
-			// Scrape annotations
-			std::vector<std::string> annotations = ScrapeAnnotations(cxxRecordDecl);
+                    if (it == cxxRecordDecl->bases_begin()) {
+                        m_Storage->GetType(base_qtype.GetTypeID())->AddDerivedType(typeId);
+                    }
+                }
 
-		}
+                // Scrape annotations
+                std::vector<std::string> annotations = ScrapeAnnotations(cxxRecordDecl);
 
-		for (auto qt : templateArgs)
-			type->AddTemplateArgument(qt);
+            }
+        }
+
+		for (const TemplateArgument& argument : templateArgs)
+			type->AddTemplateArgument(argument);
 
 		m_Storage->AddType(type);
 
@@ -242,10 +265,12 @@ namespace metacpp {
 		auto constructor = clang::dyn_cast<clang::CXXConstructorDecl>(cxxMethodDecl);
 		auto destructor = clang::dyn_cast<clang::CXXDestructorDecl>(cxxMethodDecl);
 
-        if (constructor && !constructor->isDeleted() && constructor->isDefaultConstructor() && constructor->getAccess() == clang::AccessSpecifier::AS_public) {
+        if (constructor && !constructor->isDeleted() && constructor->isDefaultConstructor() && constructor->getAccess() == clang::AccessSpecifier::AS_public
+            && parent->GetQualifiedName().GetName() != "__cow_string") {
             parent->SetHasDefaultConstructor(true);
         }
-        if (destructor && !destructor->isDeleted() && destructor->getAccess() == clang::AccessSpecifier::AS_public) {
+        if (destructor && !destructor->isDeleted() && destructor->getAccess() == clang::AccessSpecifier::AS_public
+            && parent->GetQualifiedName().GetName() != "__cow_string") {
             parent->SetHasDefaultDestructor(true);
         }
 
@@ -277,12 +302,18 @@ namespace metacpp {
 		QualifiedType qualifiedType;
 
 		qualifiedType.SetConst(qualType.isConstant(*m_Context));
-
-		if (auto ptr = clang::dyn_cast<clang::PointerType>(qualType.split().Ty)) {
+        qualifiedType.SetArraySize(1);
+        if (auto ptr = clang::dyn_cast<clang::PointerType>(qualType.split().Ty)) {
 			qualifiedType.SetQualifierOperator(QualifierOperator::POINTER);
 			qualType = ptr->getPointeeType();
 		}
-		else if (auto ref = clang::dyn_cast<clang::ReferenceType>(qualType.split().Ty)) {
+        else if (auto arr = clang::dyn_cast<clang::ConstantArrayType>(qualType.split().Ty)) {
+            qualifiedType.SetArraySize(arr->getSize().getLimitedValue());
+            // std::cout << "Found array of size " << qualifiedType.GetArraySize() << std::endl;
+            qualType = arr->getElementType();
+            qualifiedType.SetQualifierOperator(QualifierOperator::VALUE);
+        }
+        else if (auto ref = clang::dyn_cast<clang::ReferenceType>(qualType.split().Ty)) {
 			qualifiedType.SetQualifierOperator(QualifierOperator::REFERENCE);
 			qualType = ref->getPointeeType();
 		} else

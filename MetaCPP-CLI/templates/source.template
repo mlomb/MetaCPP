@@ -22,7 +22,11 @@ namespace metacpp { namespace generated {
 		{{#types}}
 		{
 			Type* type = new Type({{id}}, QualifiedName("{{qualifiedName}}"));
-			type->SetSize({{size}});
+#if ({{hasSize}} == 1)
+			type->SetSize(sizeof({{qualifiedName}}));
+#else
+            type->SetSize(sizeof(void*));
+#endif
 			type->SetKind(static_cast<TypeKind>({{kind}}));
 			type->SetAccess(static_cast<AccessSpecifier>({{access}}));
 			type->SetPolymorphic({{polymorphic}});
@@ -47,10 +51,14 @@ namespace metacpp { namespace generated {
 			// Template arguments
 			{{#templateArguments}}
 			{
+#if ({{isIntegral}} == 1)
+                type->AddTemplateArgument((unsigned long long){{integralValue}});
+#else
 )" +
 #include "source.qualifiedType.template"
 + R"(
 				type->AddTemplateArgument(qualifiedType);
+#endif
 			}
 			{{/templateArguments}}
 			
@@ -100,10 +108,16 @@ namespace metacpp { namespace generated {
 			// SequentialContainer
 			class SequentialContainerSpecialization : public SequentialContainer {
 			public:
-				SequentialContainerSpecialization(Type* type) : m_Type(type) {};
+				SequentialContainerSpecialization(Type* type) :
+                    m_Type(type)
+#if ({{isStaticArray}} == 1) // isStaticArray
+                    , m_Counter(0)
+#endif
+                {
+                };
 				
 				QualifiedType ValuesType() const override {
-					return m_Type->GetTemplateArguments().at(0);
+					return std::get<QualifiedType>(m_Type->GetTemplateArguments().at(0));
 				}
 			
 				size_t Size(void* container) const override {
@@ -113,13 +127,23 @@ namespace metacpp { namespace generated {
 				void* At(void* container, size_t index) const override {
 					return &Cast(container).at(index);
 				}
-				
-				void PushBack(void* container, void* item_ptr) const override {
+
+#if ({{isStaticArray}} == 1) // isStaticArray
+                void PushBack(void* container, void* item_ptr) const override {
+					{{containerValueQualifiedName}}* item_obj = reinterpret_cast<{{containerValueQualifiedName}}*>(item_ptr);
+					Cast(container)[m_Counter++]=*item_obj;
+				}
+#else
+                void PushBack(void* container, void* item_ptr) const override {
 					{{containerValueQualifiedName}}* item_obj = reinterpret_cast<{{containerValueQualifiedName}}*>(item_ptr);
 					Cast(container).push_back(*item_obj);
 				}
+#endif
 				
 			private:
+#if ({{isStaticArray}} == 1) // isStaticArray
+                mutable size_t m_Counter{0};
+#endif
 				{{qualifiedName}}& Cast(void* container) const {
 					return *reinterpret_cast<{{qualifiedName}}*>(container);
 				}

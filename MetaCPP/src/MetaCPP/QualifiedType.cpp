@@ -53,6 +53,11 @@ namespace metacpp {
 		m_Const = is_const;
 	}
 
+    void QualifiedType::SetArraySize(const std::size_t arraySize)
+    {
+	    m_ArraySize = arraySize;
+    }
+
 	TypeID QualifiedType::GetTypeID() const
 	{
 		return m_Type;
@@ -67,4 +72,9 @@ namespace metacpp {
 	{
 		return m_Const;
 	}
+
+    std::size_t QualifiedType::GetArraySize() const
+    {
+	    return m_ArraySize;
+    }
 }

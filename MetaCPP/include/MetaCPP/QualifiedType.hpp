@@ -2,6 +2,8 @@
 #define METACPP_QUALIFIEDTYPE_HPP
 
 #include <string>
+#include <iostream>
+#include <variant>
 
 #include "TypeID.hpp"
 
@@ -21,10 +23,12 @@ namespace metacpp {
 		void SetTypeID(const TypeID typeID);
 		void SetQualifierOperator(const QualifierOperator qualifierOperator);
 		void SetConst(const bool is_const);
+		void SetArraySize(std::size_t arraySize);
 
 		TypeID GetTypeID() const;
 		QualifierOperator GetQualifierOperator() const;
 		bool IsConst() const;
+        std::size_t GetArraySize() const;
 
 		std::string GetQualifiedName(const Storage* storage) const;
 
@@ -32,9 +36,12 @@ namespace metacpp {
 		QualifierOperator m_Operator;
 		bool m_Const;
 		TypeID m_Type;
+        std::size_t m_ArraySize;
 
 		friend class MetaExporter;
 	};
+
+    using TemplateArgument = std::variant<QualifiedType, unsigned long long>;
 }
 
 #endif

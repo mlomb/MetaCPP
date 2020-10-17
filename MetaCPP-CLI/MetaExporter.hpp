@@ -7,10 +7,12 @@
 #include <mustache.hpp>
 using namespace kainjow;
 
+#include "MetaCPP/Storage.hpp"
+
 namespace metacpp {
 	class Storage;
 	class Type;
-	class QualifiedType;
+    class QualifiedType;
 	class Field;
 
 	class MetaExporter {
@@ -25,7 +27,8 @@ namespace metacpp {
 
 		mustache::data ExportStorage();
 		mustache::data ExportType(const Type* type);
-		mustache::data ExportQualifiedType(const QualifiedType& qtype);
+        mustache::data ExportQualifiedType(const QualifiedType& qtype);
+        mustache::data ExportTemplateArgument(const TemplateArgument& argument);
 		mustache::data ExportField(const Field& field);
 
 		void SetIncludes(const std::vector<std::string>& includes, mustache::data& data);

@@ -39,13 +39,13 @@ namespace metacpp {
 	template<typename T>
 	inline T* Field::Get(const void* object) const
 	{
-		return reinterpret_cast<T*>((size_t)object + m_OffsetInBytes);
+		return reinterpret_cast<T*>((char*)object + m_OffsetInBytes);
 	}
 
 	template<typename T>
 	inline void Field::Set(const T& value, const void* object) const
 	{
-		T& obj_value = *reinterpret_cast<T*>((size_t)object + m_OffsetInBytes);
+		T& obj_value = *reinterpret_cast<T*>((char*)object + m_OffsetInBytes);
 		obj_value = value;
 	}
 }

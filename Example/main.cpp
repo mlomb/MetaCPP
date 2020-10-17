@@ -24,14 +24,17 @@ int main() {
 
 	Map map;
 	map.entities = { player, monster };
-	map.magic_numbers = { 4, 2 };
+	//map.magic_numbers = {4, 2};
+	map.magic_numbers[0] = 3;
+    map.magic_numbers[1] = 2;
+    map.magic_numbers[2] = 1;
 	map.map = {
 		{ 1, 2, 3 },
 		{ 4, 5, 6 },
 		{ 7, 8, 9 },
 	};
 
-	metacpp::JsonSerializer serializer = metacpp::JsonSerializer(storage);
+	metacpp::JsonSerializer serializer = metacpp::JsonSerializer(storage, false);
 
 	// serialize
 	std::string json = serializer.Serialize(&map, true /* pretty print */);

@@ -4,7 +4,6 @@
 #include <fstream>
 
 #include "Templates.hpp"
-#include "MetaCPP/Storage.hpp"
 
 namespace metacpp {
 	MetaExporter::MetaExporter(const Storage* storage)
@@ -80,7 +79,7 @@ namespace metacpp {
 		data["id"] = std::to_string(type->m_ID);
 		data["qualifiedName"] = type->m_QualifiedName.FullQualified();
 		data["name"] = type->m_QualifiedName.GetName();
-		data["size"] = std::to_string(type->m_SizeInBytes);
+		data["hasSize"] = std::to_string(type->HasSize());
 		data["kind"] = std::to_string(type->m_Kind);
 		data["access"] = std::to_string(type->m_Access);
 		data["valid"] = std::to_string(type->IsValid());
@@ -92,11 +91,13 @@ namespace metacpp {
 		bool assocContainer = type->IsAssociativeContainer();
 
 		if (type->m_TemplateArguments.size() > 0) {
-			auto t = type->m_TemplateArguments[0];
-			data["containerValueQualifiedName"] = t.GetQualifiedName(m_Storage);
+			auto argument = type->m_TemplateArguments[0];
+			if(std::holds_alternative<QualifiedType>(argument))
+                data["containerValueQualifiedName"] = std::get<QualifiedType>(argument).GetQualifiedName(m_Storage);
 		}
 
 		data["isSequentialContainer"] = std::to_string(seqContainer);
+        data["isStaticArray"] = std::to_string(type->IsStaticArray());
 		data["isAssociativeContainer"] = std::to_string(assocContainer);
 		data["isContainer"] = std::to_string(seqContainer || assocContainer);
 
@@ -124,11 +125,8 @@ namespace metacpp {
 
 		// Template Arguments
 		mustache::data templateArguments{ mustache::data::type::list };
-		for (const QualifiedType& arg : type->m_TemplateArguments) {
-			if (arg.GetTypeID() != 0)
-				templateArguments << ExportQualifiedType(arg);
-			else
-				templateArguments << mustache::data{ "null", false };
+		for (const TemplateArgument& arg : type->m_TemplateArguments) {
+            templateArguments << ExportTemplateArgument(arg);
 		}
 
 		// Fields
@@ -150,7 +148,8 @@ namespace metacpp {
 		mustache::data data;
 		data["typeID"] = std::to_string(qtype.m_Type);
 		data["const"] = std::to_string(qtype.m_Const);
-		data["operator"] = std::to_string(qtype.m_Operator);
+        data["operator"] = std::to_string(qtype.m_Operator);
+        data["arraySize"] = std::to_string(qtype.m_ArraySize);
 		return data;
 	}
 
@@ -164,4 +163,28 @@ namespace metacpp {
 		data["offset"] = std::to_string(field.m_OffsetInBytes);
 		return data;
 	}
+
+    mustache::data MetaExporter::ExportTemplateArgument(const TemplateArgument &argument)
+    {
+        mustache::data data;
+
+        if(std::holds_alternative<QualifiedType>(argument)) {
+            data["isIntegral"] = std::to_string(false);
+            data["integralValue"] = std::to_string(0);
+            const QualifiedType& qtype = std::get<QualifiedType>(argument);
+            data["typeID"] = std::to_string(qtype.m_Type);
+            data["const"] = std::to_string(qtype.m_Const);
+            data["operator"] = std::to_string(qtype.m_Operator);
+            data["arraySize"] = std::to_string(qtype.m_ArraySize);
+        } else
+        {
+            data["isIntegral"] = std::to_string(true);
+            data["integralValue"] = std::to_string(std::get<unsigned long long>(argument));
+            data["typeID"] = std::to_string(0);
+            data["const"] = std::to_string(false);
+            data["operator"] = std::to_string(0);
+            data["arraySize"] = std::to_string(0);
+        }
+        return data;
+    }
 }
