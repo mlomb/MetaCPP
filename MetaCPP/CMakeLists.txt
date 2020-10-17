@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 3.1)
 project(MetaCPP)
 
-set (CMAKE_CXX_STANDARD 11)
-
 set(MetaCPP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(MetaCPP_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

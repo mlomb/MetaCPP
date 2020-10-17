@@ -50,7 +50,8 @@ namespace metacpp {
 		FIELD_SET(SetDouble, double)
 		else if(id == TypeInfo<std::string>::ID) {
 			const std::string* str = reinterpret_cast<const std::string*>(ptr);
-			value.Swap(Value((*str).c_str(), context.document->GetAllocator()));
+			auto newValue = Value((*str).c_str(), context.document->GetAllocator());
+			value.Swap(newValue);
 		}
 		else {
 			// Unhandled basic type
@@ -147,7 +148,7 @@ namespace metacpp {
 			object.AddMember("reflection_class", rc, context.document->GetAllocator());
 		}
 
-		std::vector<Field>& fields = context.serializer->GetStorage()->GetAllFields(type);
+		const std::vector<Field>& fields = context.serializer->GetStorage()->GetAllFields(type);
 
 		for (const Field& field : fields) {
 			const QualifiedType& field_qtype = field.GetType();
@@ -184,7 +185,8 @@ namespace metacpp {
 			SerializeObject(type, obj, true, 0, context);
 		}
 		else {
-			document.Swap(SerializeObject(type, obj, false, 0, context));
+		    auto serializedDocument = SerializeObject(type, obj, false, 0, context);
+			document.Swap(serializedDocument);
 		}
 
 		StringBuffer sb;
@@ -304,23 +306,30 @@ namespace metacpp {
 
 				for (const Value& item : value.GetArray()) {
 					switch (item_qtype.GetQualifierOperator()) {
-					case QualifierOperator::VALUE:
-					{
-						void* temp_item_ptr = item_type->Allocate();
+                        case QualifierOperator::VALUE:
+                        {
+                            void* temp_item_ptr = item_type->Allocate();
 
-						DeSerializeType(item_qtype, item, temp_item_ptr, context);
+                            DeSerializeType(item_qtype, item, temp_item_ptr, context);
 
-						sc->PushBack(obj, temp_item_ptr);
+                            sc->PushBack(obj, temp_item_ptr);
 
-						delete temp_item_ptr;
-						break;
-					}
-					case QualifierOperator::POINTER:
-						void* holder = 0;
-						DeSerializePointer(item_type, item, &holder, context);
+                            item_type->Delete(temp_item_ptr);
+                            break;
+                        }
+                        case QualifierOperator::POINTER:
+                            {
+                            void *holder = 0;
+                            DeSerializePointer(item_type, item, &holder, context);
 
-						sc->PushBack(obj, &holder);
-						break;
+                            sc->PushBack(obj, &holder);
+                            break;
+                        }
+                        case QualifierOperator::REFERENCE:
+                            {
+                            assert(false);
+                            break;
+                        }
 					}
 				}
 			}

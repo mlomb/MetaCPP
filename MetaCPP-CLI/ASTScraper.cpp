@@ -77,6 +77,7 @@ namespace metacpp {
 
 			type->SetAccess(TransformAccess(cxxRecordDecl->getAccess()));
 			type->SetHasDefaultConstructor(!typeCxxRecordDecl->hasUserProvidedDefaultConstructor() && typeCxxRecordDecl->needsImplicitDefaultConstructor());
+            type->SetHasDefaultDestructor(typeCxxRecordDecl->needsImplicitDestructor());
 
 			// methods
 			for (auto it = cxxRecordDecl->method_begin(); it != cxxRecordDecl->method_end(); it++) {
@@ -87,7 +88,10 @@ namespace metacpp {
 			}
 
 			if (typeCxxRecordDecl->isAbstract())
-				type->SetHasDefaultConstructor(false);
+            {
+                type->SetHasDefaultConstructor(false);
+                type->SetHasDefaultDestructor(false);
+            }
 		}
 
 		return type;
@@ -149,7 +153,7 @@ namespace metacpp {
 			static clang::PrintingPolicy printing_policy(lang_opts);
 
 			auto builtin = cType->getAs<clang::BuiltinType>();
-			std::string name = builtin->getName(printing_policy);
+			std::string name = builtin->getName(printing_policy).str();
 			if (name == "_Bool")
 				name = "bool";
 			qualifiedName = QualifiedName({}, name);
@@ -183,7 +187,8 @@ namespace metacpp {
 		
 		type->SetSize(m_Context->getTypeSize(cType) / 8);
 		type->SetKind(kind);
-		type->SetHasDefaultConstructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
+        type->SetHasDefaultConstructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
+        type->SetHasDefaultDestructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
 		type->SetPolymorphic(false);
 
 		if (auto cxxRecordDecl = cType->getAsCXXRecordDecl()) {
@@ -237,9 +242,12 @@ namespace metacpp {
 		auto constructor = clang::dyn_cast<clang::CXXConstructorDecl>(cxxMethodDecl);
 		auto destructor = clang::dyn_cast<clang::CXXDestructorDecl>(cxxMethodDecl);
 
-		if (constructor && constructor->isDefaultConstructor() && constructor->getAccess() == clang::AccessSpecifier::AS_public) {
-			parent->SetHasDefaultConstructor(true);
-		}
+        if (constructor && !constructor->isDeleted() && constructor->isDefaultConstructor() && constructor->getAccess() == clang::AccessSpecifier::AS_public) {
+            parent->SetHasDefaultConstructor(true);
+        }
+        if (destructor && !destructor->isDeleted() && destructor->getAccess() == clang::AccessSpecifier::AS_public) {
+            parent->SetHasDefaultDestructor(true);
+        }
 
 		metacpp::QualifiedName qualifiedName = ResolveQualifiedName(cxxMethodDecl->getQualifiedNameAsString());
 

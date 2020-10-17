@@ -89,6 +89,12 @@ namespace metacpp { namespace generated {
 				return new (ptr) {{qualifiedName}};
 			});
 #endif
+            // Destructor
+#if ({{hasDefaultDestructor}} == 1) // hasDefaultDestructor
+			type->SetDestructor([](void* ptr) -> void {
+                std::destroy_at(std::launder(reinterpret_cast<{{qualifiedName}}*>(ptr)));
+			});
+#endif
 
 #if ({{isSequentialContainer}} == 1) // isSequentialContainer
 			// SequentialContainer

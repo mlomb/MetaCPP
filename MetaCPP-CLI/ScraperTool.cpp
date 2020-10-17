@@ -8,6 +8,9 @@
 
 #include "ASTScraper.hpp"
 
+using namespace clang;
+using namespace clang::tooling;
+
 namespace metacpp {
 	ScraperTool::ScraperTool(std::string source, std::vector<std::string> flags)
 	{
@@ -15,6 +18,7 @@ namespace metacpp {
 		// For now
 		flags.push_back("-D_DEBUG");
 #endif
+        flags.push_back("-I/usr/local/lib/clang/12.0.0/include");
 
 		m_CompilationDatabase = new clang::tooling::FixedCompilationDatabase(".", flags);
 		m_ClangTool = new clang::tooling::ClangTool(*m_CompilationDatabase, source);
@@ -55,12 +59,12 @@ namespace metacpp {
 		class ActionFactory : public clang::tooling::FrontendActionFactory {
 		public:
 			ActionFactory(ASTScraper* scraper) : scraper(scraper) {};
-			clang::FrontendAction *create() override { return new ASTScraperAction(scraper); }
+            std::unique_ptr<FrontendAction> create() override { return std::make_unique<ASTScraperAction>(scraper); }
 		private:
 			ASTScraper* scraper;
 		};
-		auto scraperAction = std::unique_ptr<ActionFactory>(new ActionFactory(scraper));
+		auto scraperActionFactory = std::unique_ptr<ActionFactory>(new ActionFactory(scraper));
 
-		m_ClangTool->run(scraperAction.get());
+		m_ClangTool->run(scraperActionFactory.get());
 	}
 }

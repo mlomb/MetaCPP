@@ -85,7 +85,8 @@ namespace metacpp {
 		data["access"] = std::to_string(type->m_Access);
 		data["valid"] = std::to_string(type->IsValid());
 		data["polymorphic"] = std::to_string(type->m_Polymorphic);
-		data["hasDefaultConstructor"] = std::to_string(type->m_HasDefaultConstructor);
+        data["hasDefaultConstructor"] = std::to_string(type->m_HasDefaultConstructor);
+        data["hasDefaultDestructor"] = std::to_string(type->m_HasDefaultDestructor);
 
 		bool seqContainer = type->IsSequentialContainer();
 		bool assocContainer = type->IsAssociativeContainer();

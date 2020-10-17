@@ -3,6 +3,8 @@
 #include "MetaCPP/Storage.hpp"
 #include "MetaCPP/Type.hpp"
 
+#include <cassert>
+
 namespace metacpp {
 	QualifiedType::QualifiedType()
 		: m_Type(0), m_Operator(QualifierOperator::VALUE), m_Const(false)
@@ -29,6 +31,8 @@ namespace metacpp {
 		case QualifierOperator::REFERENCE:
 			result += "&";
 			break;
+        case QualifierOperator::VALUE:
+            break;
 		}
 
 		return result;

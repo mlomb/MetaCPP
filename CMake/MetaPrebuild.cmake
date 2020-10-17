@@ -54,12 +54,18 @@ macro(meta_generate PROJECT_NAME IN_SOURCE OUT_HEADER OUT_SOURCE ADDITIONAL_FLAG
 	set(CMD "${META_CPP_EXE} \"${IN_SOURCE_PATH}\" -out-header \"${OUT_HEADER_PATH}\" -out-source \"${OUT_SOURCE_PATH}\" ${FLAGS}")
 	separate_arguments(CMD)
 	
+	
 	add_custom_command(
-		TARGET ${PROJECT_NAME}
-		PRE_BUILD
+    	OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/MetaCPP"
 		COMMAND ${CMD}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 	)
+
+	add_custom_target(
+		ProduceMetaCPP ALL
+		DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/MetaCPP"
+		)
+
 	set_source_files_properties(${OUT_HEADER_PATH} ${OUT_SOURCE_PATH} PROPERTIES GENERATED TRUE)
 	
 endmacro()

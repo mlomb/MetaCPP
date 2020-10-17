@@ -76,7 +76,7 @@ namespace metacpp {
 
 	bool Type::IsSequentialContainer() const
 	{
-		std::string& name = m_QualifiedName.GetName();
+		const std::string& name = m_QualifiedName.GetName();
 		return name == "vector" || name == "deque" || name == "array" || name == "list" || name == "forward_list";
 	}
 
@@ -115,18 +115,27 @@ namespace metacpp {
 		return m_Container;
 	}
 
-	void* Type::Allocate(void* ptr) const
-	{
-		if(ptr == 0)
-			ptr = malloc(m_SizeInBytes);
-		memset(ptr, 0, m_SizeInBytes);
+    void* Type::Allocate(void* ptr) const
+    {
+        if(ptr == 0)
+            ptr = malloc(m_SizeInBytes);
+        memset(ptr, 0, m_SizeInBytes);
 
-		if (m_Constructor)
-			//new (ptr) T;
-			ptr = m_Constructor(ptr);
+        if (m_Constructor)
+            //new (ptr) T;
+            ptr = m_Constructor(ptr);
 
-		return ptr;
-	}
+        return ptr;
+    }
+
+    void Type::Delete(void* ptr) const
+    {
+        if (m_Destructor && ptr)
+            //ptr->~T();
+            m_Destructor(ptr);
+
+        free(ptr);
+    }
 
 	void Type::SetKind(const TypeKind kind)
 	{
@@ -153,10 +162,20 @@ namespace metacpp {
 		m_HasDefaultConstructor = hasDefaultConstructor;
 	}
 
-	void Type::SetConstructor(const Constructor constructor)
-	{
-		m_Constructor = constructor;
-	}
+    void Type::SetHasDefaultDestructor(const bool hasDefaultDestructor)
+    {
+        m_HasDefaultDestructor = hasDefaultDestructor;
+    }
+
+    void Type::SetConstructor(const Constructor constructor)
+    {
+        m_Constructor = constructor;
+    }
+
+    void Type::SetDestructor(const Destructor destructor)
+    {
+        m_Destructor = destructor;
+    }
 
 	void Type::SetContainer(Container* container)
 	{
