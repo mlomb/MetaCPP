@@ -41,7 +41,8 @@ namespace metacpp {
 		const QualifiedName& GetQualifiedName() const;
 		TypeKind GetKind() const;
 		AccessSpecifier GetAccess() const;
-        size_t GetSize() const;
+		size_t GetArraySize() const;
+		size_t GetSize() const;
         bool HasSize() const;
 		bool IsPrimitive() const;
 		bool IsStruct() const;
@@ -54,6 +55,7 @@ namespace metacpp {
 		bool IsAssociativeContainer() const;
 		bool IsContainer() const;
 		const std::vector<Field>& GetFields() const;
+		const std::vector<Method>& GetMethods() const;
 		const std::vector<TemplateArgument> GetTemplateArguments() const;
 		const std::vector<BaseType>& GetBaseTypes() const;
 		const std::vector<TypeID>& GetDerivedTypes() const;
@@ -64,6 +66,7 @@ namespace metacpp {
 
 		void SetKind(const TypeKind kind);
 		void SetAccess(const AccessSpecifier access);
+		void SetArraySize(const size_t arraySize);
 		void SetSize(const size_t bytes);
 		void SetPolymorphic(const bool polymorphic);
         void SetHasDefaultConstructor(const bool hasDefaultConstructor);
@@ -77,11 +80,12 @@ namespace metacpp {
 		void AddTemplateArgument(const TemplateArgument& arg, const int pos = -1);
 		void AddField(Field& field);
 		void AddMethod(Method& method);
-		
+
 	private:
 		const TypeID m_ID;
 		const QualifiedName m_QualifiedName;
 		size_t m_SizeInBytes;
+		size_t m_ArraySize;
 		TypeKind m_Kind;
 		AccessSpecifier m_Access;
 		bool m_Polymorphic;

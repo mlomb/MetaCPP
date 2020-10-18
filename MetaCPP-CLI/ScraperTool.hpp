@@ -15,11 +15,11 @@ namespace metacpp {
 		ScraperTool(std::string source, std::vector<std::string> flags);
 		~ScraperTool();
 
-		void Run(ASTScraper* scraper);
+		void Run(ASTScraper *scraper);
 
 	private:
-		clang::tooling::FixedCompilationDatabase* m_CompilationDatabase;
-		clang::tooling::ClangTool* m_ClangTool;
+		clang::tooling::FixedCompilationDatabase *m_CompilationDatabase;
+		clang::tooling::ClangTool *m_ClangTool;
 	};
 }
 

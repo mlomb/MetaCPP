@@ -3,6 +3,11 @@
 
 #include <string>
 
+#define RAPIDJSON_HAS_STDSTRING 1
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+
+#include "MetaCPP/SequentialContainer.hpp"
 #include "TypeInfo.hpp"
 #include "Storage.hpp"
 
@@ -27,6 +32,28 @@ namespace metacpp {
 
 		bool m_UseReferencesTable;
 		int m_MaxPointerDepth;
+
+		struct SerializationContext {
+			JsonSerializer *serializer;
+
+			rapidjson::Document *document;
+			std::vector<void *> references;
+		};
+
+		std::pair<const Type *, void *> Allocate(const Type *type, const rapidjson::Value &value, SerializationContext &context);
+
+		rapidjson::Value SerializeBasicType(const Type *type, void *ptr, SerializationContext &context);
+		rapidjson::Value SerializeType(const QualifiedType &qtype, void *ptr, const int pointer_recursion, SerializationContext &context);
+		rapidjson::Value SerializeObject(const Type *type, void *ptr, const bool is_reference, const int pointer_recursion, SerializationContext &context);
+
+		void DeSerializeArray(const rapidjson::Value &value, void *obj, SerializationContext &context, const SequentialContainer *sc, const QualifiedType &item_qtype, const Type *item_type);
+		void DeSerializeValue(const rapidjson::Value &value, void *obj, SerializationContext &context, const Type *type, TypeID id);
+		void DeSerializeVoidPtr(void *ptr_data, void *ptr);
+		void DeSerializePointer(const Type *type, const rapidjson::Value &value, void *obj, SerializationContext &context);
+		void DeSerializeBasicType(const TypeID id, const rapidjson::Value &value, void *ptr);
+		void DeSerializeType(const QualifiedType &qtype, const rapidjson::Value &value, void *obj, SerializationContext &context);
+		void DeSerializeObject(const Type *type, const rapidjson::Value &value, void *obj, SerializationContext &context);
+
 	};
 
 	template<typename T>

@@ -27,6 +27,7 @@ namespace metacpp { namespace generated {
 #else
             type->SetSize(sizeof(void*));
 #endif
+			type->SetArraySize({{arraySize}});
 			type->SetKind(static_cast<TypeKind>({{kind}}));
 			type->SetAccess(static_cast<AccessSpecifier>({{access}}));
 			type->SetPolymorphic({{polymorphic}});
@@ -35,11 +36,13 @@ namespace metacpp { namespace generated {
 			{{#baseTypes}}
 			{
 				{{#qualifiedType}}
+				{
 )" +
 #include "source.qualifiedType.template"
 + R"(
+					type->AddBaseType(qualifiedType, static_cast<AccessSpecifier>({{access}}));
+				}
 				{{/qualifiedType}}
-				type->AddBaseType(qualifiedType, static_cast<AccessSpecifier>({{access}}));
 			}
 			{{/baseTypes}}
 			
@@ -54,10 +57,12 @@ namespace metacpp { namespace generated {
 #if ({{isIntegral}} == 1)
                 type->AddTemplateArgument((unsigned long long){{integralValue}});
 #else
+				{
 )" +
 #include "source.qualifiedType.template"
 + R"(
-				type->AddTemplateArgument(qualifiedType);
+					type->AddTemplateArgument(qualifiedType);
+				}
 #endif
 			}
 			{{/templateArguments}}
@@ -66,14 +71,15 @@ namespace metacpp { namespace generated {
 			{{#fields}}
 			{
 				{{#qualifiedType}}
+				{
 )" +
 #include "source.qualifiedType.template"
 + R"(
+					Field field(qualifiedType, QualifiedName("{{qualifiedName}}"));
+					field.SetOffset({{offset}});
+					type->AddField(field);
+				}
 				{{/qualifiedType}}
-				
-				Field field(qualifiedType, QualifiedName("{{qualifiedName}}"));
-				field.SetOffset({{offset}});
-				type->AddField(field);
 			}
 			{{/fields}}
 			
@@ -100,9 +106,34 @@ namespace metacpp { namespace generated {
             // Destructor
 #if ({{hasDefaultDestructor}} == 1) // hasDefaultDestructor
 			type->SetDestructor([](void* ptr) -> void {
-                std::destroy_at(std::launder(reinterpret_cast<{{qualifiedName}}*>(ptr)));
+				struct _layout {
+					{{qualifiedMemberName}};
+				};
+                std::destroy_at(std::launder(reinterpret_cast<_layout*>(ptr)));
 			});
 #endif
+
+			// Methods
+			{{#methods}}
+			{
+				Method method(QualifiedName("{{qualifiedName}}"));
+
+				// Params
+				{{#methodParams}}
+					{{#qualifiedType}}
+				{
+)" +
+#include "source.qualifiedType.template"
++ R"(
+					method.AddParameter(MethodParameter("{{methodParamName}}", qualifiedType));
+				}
+					{{/qualifiedType}}
+
+				{{/methodParams}}
+
+				type->AddMethod(method);
+			}
+			{{/methods}}
 
 #if ({{isSequentialContainer}} == 1) // isSequentialContainer
 			// SequentialContainer
