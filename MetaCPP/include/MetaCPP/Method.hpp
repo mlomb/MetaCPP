@@ -11,10 +11,10 @@
 namespace metacpp {
 	class MethodParameter {
 	public:
-		MethodParameter(const std::string &name, const QualifiedType &type);
+		MethodParameter(const std::string& name, const QualifiedType& type);
 
-		const std::string &GetName() const;
-		const QualifiedType &GetType() const;
+		const std::string& GetName() const;
+		const QualifiedType& GetType() const;
 
 	private:
 		std::string m_Name;
@@ -23,14 +23,14 @@ namespace metacpp {
 
 	class Method {
 	public:
-		Method(const QualifiedName &qName);
+		Method(const QualifiedName& qName);
 
 		TypeID GetOwnerType() const;
-		const QualifiedName &GetQualifiedName() const;
+		const QualifiedName& GetQualifiedName() const;
 
 		void SetOwner(const TypeID ownerTypeId);
 
-		void AddParameter(const MethodParameter &parameter);
+		void AddParameter(const MethodParameter& parameter);
 
 	private:
 		TypeID m_Owner;

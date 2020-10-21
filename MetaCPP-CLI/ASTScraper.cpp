@@ -11,17 +11,17 @@
 #include "MetaCPP/Type.hpp"
 
 namespace metacpp {
-	ASTScraper::ASTScraper(Storage *storage, const Configuration &config)
+	ASTScraper::ASTScraper(Storage* storage, const Configuration& config)
 			: m_Config(config), m_Storage(storage) {
 	}
 
-	void ASTScraper::ScrapeTranslationUnit(const clang::TranslationUnitDecl *tuDecl) {
+	void ASTScraper::ScrapeTranslationUnit(const clang::TranslationUnitDecl* tuDecl) {
 		ScrapeDeclContext(tuDecl, nullptr);
 	}
 
-	void ASTScraper::ScrapeDeclContext(const clang::DeclContext *ctxDecl, Type *parent) {
+	void ASTScraper::ScrapeDeclContext(const clang::DeclContext* ctxDecl, Type* parent) {
 		for (clang::DeclContext::decl_iterator it = ctxDecl->decls_begin(); it != ctxDecl->decls_end(); ++it) {
-			const clang::Decl *decl = *it;
+			const clang::Decl* decl = *it;
 			if (decl->isInvalidDecl())
 				continue;
 
@@ -31,7 +31,7 @@ namespace metacpp {
 		}
 	}
 
-	void ASTScraper::ScrapeNamedDecl(const clang::NamedDecl *namedDecl, Type *parent) {
+	void ASTScraper::ScrapeNamedDecl(const clang::NamedDecl* namedDecl, Type* parent) {
 		clang::Decl::Kind kind = namedDecl->getKind();
 		switch (kind) {
 			case clang::Decl::Kind::ClassTemplate:
@@ -56,17 +56,17 @@ namespace metacpp {
 		}
 	}
 
-	Type *ASTScraper::ScrapeCXXRecordDecl(const clang::CXXRecordDecl *cxxRecordDecl, Type *parent) {
+	Type* ASTScraper::ScrapeCXXRecordDecl(const clang::CXXRecordDecl* cxxRecordDecl, Type* parent) {
 		if (cxxRecordDecl->isAnonymousStructOrUnion()) {
 			ScrapeDeclContext(cxxRecordDecl, parent);
 			return 0;
 		}
 
-		const clang::Type *cType = cxxRecordDecl->getTypeForDecl();
-		metacpp::Type *type = ScrapeType(cType, 1);
+		const clang::Type* cType = cxxRecordDecl->getTypeForDecl();
+		metacpp::Type* type = ScrapeType(cType, 1);
 
 		if (type) {
-			const clang::CXXRecordDecl *typeCxxRecordDecl = cType->getAsCXXRecordDecl();
+			const clang::CXXRecordDecl* typeCxxRecordDecl = cType->getAsCXXRecordDecl();
 
 			type->SetAccess(TransformAccess(cxxRecordDecl->getAccess()));
 			type->SetHasDefaultConstructor(!typeCxxRecordDecl->hasUserProvidedDefaultConstructor() && typeCxxRecordDecl->needsImplicitDefaultConstructor());
@@ -74,7 +74,7 @@ namespace metacpp {
 
 			// methods
 			for (auto it = cxxRecordDecl->method_begin(); it != cxxRecordDecl->method_end(); it++) {
-				clang::CXXMethodDecl *method = *it;
+				clang::CXXMethodDecl* method = *it;
 				if (method != 0) {
 					ScrapeMethodDecl(method, type);
 				}
@@ -90,7 +90,7 @@ namespace metacpp {
 	}
 
 	std::vector<TemplateArgument>
-	ASTScraper::ResolveCXXRecordTemplate(const clang::CXXRecordDecl *cxxRecordDecl, QualifiedName &qualifiedName) {
+	ASTScraper::ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName) {
 		std::string typeName = cxxRecordDecl->getQualifiedNameAsString();
 		std::vector<TemplateArgument> templateArgs;
 
@@ -99,9 +99,9 @@ namespace metacpp {
 		if (templateDecl) {
 			typeName += "<";
 
-			const clang::TemplateArgumentList &args = templateDecl->getTemplateArgs();
+			const clang::TemplateArgumentList& args = templateDecl->getTemplateArgs();
 			for (int i = 0, end = (int) args.size(); i < end; i++) {
-				const clang::TemplateArgument &arg = args[i];
+				const clang::TemplateArgument& arg = args[i];
 				if (i > 0)
 					typeName += ",";
 
@@ -140,7 +140,7 @@ namespace metacpp {
 		return templateArgs;
 	}
 
-	Type *ASTScraper::ScrapeType(const clang::Type *cType, size_t arraySize) {
+	Type* ASTScraper::ScrapeType(const clang::Type* cType, size_t arraySize) {
 		QualifiedName qualifiedName;
 		metacpp::TypeKind kind;
 		std::vector<TemplateArgument> templateArgs;
@@ -205,13 +205,14 @@ namespace metacpp {
 		if (m_Storage->HasType(typeId))
 			return m_Storage->GetType(typeId);
 
-		metacpp::Type *type = new metacpp::Type(typeId, qualifiedName);
+		metacpp::Type* type = new metacpp::Type(typeId, qualifiedName);
 
 		type->SetArraySize(arraySize);
 		type->SetKind(kind);
 		type->SetHasDefaultConstructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
 		type->SetHasDefaultDestructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
 		type->SetPolymorphic(false);
+		m_Storage->AddType(type);
 
 		if (auto cxxRecordDecl = cType->getAsCXXRecordDecl()) {
 			if (cxxRecordDecl->getDeclKind() == clang::Decl::ClassTemplateSpecialization
@@ -235,10 +236,8 @@ namespace metacpp {
 			}
 		}
 
-		for (const TemplateArgument &argument : templateArgs)
+		for (const TemplateArgument& argument : templateArgs)
 			type->AddTemplateArgument(argument);
-
-		m_Storage->AddType(type);
 
 		if (auto declCtx = cType->getAsTagDecl()->castToDeclContext(cType->getAsTagDecl()))
 			ScrapeDeclContext(declCtx, type);
@@ -246,7 +245,7 @@ namespace metacpp {
 		return type;
 	}
 
-	void ASTScraper::ScrapeFieldDecl(const clang::FieldDecl *fieldDecl, Type *parent) {
+	void ASTScraper::ScrapeFieldDecl(const clang::FieldDecl* fieldDecl, Type* parent) {
 		if (!parent)
 			return;
 		if (fieldDecl->isAnonymousStructOrUnion())
@@ -261,7 +260,7 @@ namespace metacpp {
 		parent->AddField(field);
 	}
 
-	void ASTScraper::ScrapeMethodDecl(const clang::CXXMethodDecl *cxxMethodDecl, Type *parent) {
+	void ASTScraper::ScrapeMethodDecl(const clang::CXXMethodDecl* cxxMethodDecl, Type* parent) {
 		auto constructor = clang::dyn_cast<clang::CXXConstructorDecl>(cxxMethodDecl);
 		auto destructor = clang::dyn_cast<clang::CXXDestructorDecl>(cxxMethodDecl);
 
@@ -288,7 +287,7 @@ namespace metacpp {
 
 		// params
 		for (auto it = cxxMethodDecl->param_begin(); it != cxxMethodDecl->param_end(); it++) {
-			clang::ParmVarDecl *param = *it;
+			clang::ParmVarDecl* param = *it;
 			std::string name = param->getName().str();
 			QualifiedType qtype = ResolveQualType(param->getType(), 1);
 
@@ -322,14 +321,14 @@ namespace metacpp {
 
 		MakeCanonical(qualType);
 
-		const clang::Type *cType = qualType.split().Ty;
-		Type *type = ScrapeType(cType, arraySize);
+		const clang::Type* cType = qualType.split().Ty;
+		Type* type = ScrapeType(cType, arraySize);
 		qualifiedType.SetTypeID(type ? type->GetTypeID() : 0);
 
 		return qualifiedType;
 	}
 
-	void ASTScraper::MakeCanonical(clang::QualType &qualType) {
+	void ASTScraper::MakeCanonical(clang::QualType& qualType) {
 		if (!qualType.isCanonical())
 			qualType = qualType.getCanonicalType();
 	}
@@ -346,7 +345,7 @@ namespace metacpp {
 		return QualifiedName(qualifiedName);
 	}
 
-	void ASTScraper::RemoveAll(std::string &source, const std::string &search) {
+	void ASTScraper::RemoveAll(std::string& source, const std::string& search) {
 		std::string::size_type n = search.length();
 		for (std::string::size_type i = source.find(search); i != std::string::npos; i = source.find(search))
 			source.erase(i, n);
@@ -365,7 +364,7 @@ namespace metacpp {
 		}
 	}
 
-	std::vector<std::string> ASTScraper::ScrapeAnnotations(const clang::Decl *decl) {
+	std::vector<std::string> ASTScraper::ScrapeAnnotations(const clang::Decl* decl) {
 		std::vector<std::string> annotations;
 
 		if (decl && decl->hasAttrs()) {
@@ -374,7 +373,7 @@ namespace metacpp {
 
 			// __attribute__((annotate("...")))
 			for (; it != itEnd; it++) {
-				const clang::AnnotateAttr *attr = clang::dyn_cast<clang::AnnotateAttr>(*it);
+				const clang::AnnotateAttr* attr = clang::dyn_cast<clang::AnnotateAttr>(*it);
 				if (attr)
 					annotations.emplace_back(attr->getAnnotation());
 			}
@@ -383,13 +382,13 @@ namespace metacpp {
 		return annotations;
 	}
 
-	bool ASTScraper::IsReflected(const std::vector<std::string> &attrs) {
+	bool ASTScraper::IsReflected(const std::vector<std::string>& attrs) {
 		if (m_Config.AnnotationRequired.size() == 0)
 			return true;
 		return std::find(attrs.begin(), attrs.end(), m_Config.AnnotationRequired) != attrs.end();
 	}
 
-	void ASTScraper::SetContext(clang::ASTContext *context) {
+	void ASTScraper::SetContext(clang::ASTContext* context) {
 		m_Context = context;
 	}
 }

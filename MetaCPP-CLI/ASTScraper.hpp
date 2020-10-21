@@ -16,35 +16,35 @@ namespace metacpp {
 			std::string AnnotationRequired;
 		};
 
-		ASTScraper(Storage *storage, const Configuration &config);
+		ASTScraper(Storage* storage, const Configuration& config);
 
-		void ScrapeTranslationUnit(const clang::TranslationUnitDecl *tuDecl);
-		void ScrapeDeclContext(const clang::DeclContext *ctxDecl, Type *parent);
-		void ScrapeNamedDecl(const clang::NamedDecl *namedDecl, Type *parent);
+		void ScrapeTranslationUnit(const clang::TranslationUnitDecl* tuDecl);
+		void ScrapeDeclContext(const clang::DeclContext* ctxDecl, Type* parent);
+		void ScrapeNamedDecl(const clang::NamedDecl* namedDecl, Type* parent);
 
-		Type *ScrapeCXXRecordDecl(const clang::CXXRecordDecl *cxxRecordDecl, Type *parent);
-		std::vector<TemplateArgument> ResolveCXXRecordTemplate(const clang::CXXRecordDecl *cxxRecordDecl, QualifiedName &qualifiedName);
-		Type *ScrapeType(const clang::Type *cType, size_t arraySize);
-		void ScrapeFieldDecl(const clang::FieldDecl *fieldDecl, Type *parent);
-		void ScrapeMethodDecl(const clang::CXXMethodDecl *cxxMethodDecl, Type *parent);
+		Type* ScrapeCXXRecordDecl(const clang::CXXRecordDecl* cxxRecordDecl, Type* parent);
+		std::vector<TemplateArgument> ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName);
+		Type* ScrapeType(const clang::Type* cType, size_t arraySize);
+		void ScrapeFieldDecl(const clang::FieldDecl* fieldDecl, Type* parent);
+		void ScrapeMethodDecl(const clang::CXXMethodDecl* cxxMethodDecl, Type* parent);
 
 		QualifiedType ResolveQualType(clang::QualType qualType, size_t arraySize);
-		std::vector<std::string> ScrapeAnnotations(const clang::Decl *decl);
+		std::vector<std::string> ScrapeAnnotations(const clang::Decl* decl);
 
 		/* Utility */
-		void MakeCanonical(clang::QualType &qualType);
+		void MakeCanonical(clang::QualType& qualType);
 		QualifiedName ResolveQualifiedName(std::string qualifiedName);
-		void RemoveAll(std::string &source, const std::string &search);
+		void RemoveAll(std::string& source, const std::string& search);
 		AccessSpecifier TransformAccess(const clang::AccessSpecifier as);
 
-		bool IsReflected(const std::vector<std::string> &attrs);
+		bool IsReflected(const std::vector<std::string>& attrs);
 
-		void SetContext(clang::ASTContext *context);
+		void SetContext(clang::ASTContext* context);
 
 	private:
-		clang::ASTContext *m_Context;
+		clang::ASTContext* m_Context;
 		Configuration m_Config;
-		Storage *m_Storage;
+		Storage* m_Storage;
 	};
 }
 

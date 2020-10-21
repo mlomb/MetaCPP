@@ -1,19 +1,19 @@
 #include "MetaCPP/Method.hpp"
 
 namespace metacpp {
-	MethodParameter::MethodParameter(const std::string &name, const QualifiedType &type)
+	MethodParameter::MethodParameter(const std::string& name, const QualifiedType& type)
 			: m_Name(name), m_Type(type) {
 	}
 
-	const std::string &MethodParameter::GetName() const {
+	const std::string& MethodParameter::GetName() const {
 		return m_Name;
 	}
 
-	const QualifiedType &MethodParameter::GetType() const {
+	const QualifiedType& MethodParameter::GetType() const {
 		return m_Type;
 	}
 
-	Method::Method(const QualifiedName &qName)
+	Method::Method(const QualifiedName& qName)
 			: m_QualifiedName(qName), m_Owner(0) {
 	}
 
@@ -21,7 +21,7 @@ namespace metacpp {
 		return m_Owner;
 	}
 
-	const QualifiedName &Method::GetQualifiedName() const {
+	const QualifiedName& Method::GetQualifiedName() const {
 		return m_QualifiedName;
 	}
 
@@ -29,7 +29,7 @@ namespace metacpp {
 		m_Owner = ownerTypeId;
 	}
 
-	void Method::AddParameter(const MethodParameter &parameter) {
+	void Method::AddParameter(const MethodParameter& parameter) {
 		m_Parameters.push_back(parameter);
 	}
 }

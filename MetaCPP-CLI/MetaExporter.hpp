@@ -21,25 +21,25 @@ namespace metacpp {
 
 	class MetaExporter {
 	public:
-		MetaExporter(const Storage *storage);
+		MetaExporter(const Storage* storage);
 
-		void Export(const std::string &inputSource, const std::string &outputHeader, const std::string &outputSource);
+		void Export(const std::string& inputSource, const std::string& outputHeader, const std::string& outputSource);
 
 	private:
-		std::string GenerateSourceFile(const std::vector<std::string> &includes, mustache::data &storageData);
-		std::string GenerateHeaderFile(const std::vector<std::string> &includes, mustache::data &storageData);
+		std::string GenerateSourceFile(const std::vector<std::string>& includes, mustache::data& storageData);
+		std::string GenerateHeaderFile(const std::vector<std::string>& includes, mustache::data& storageData);
 
 		mustache::data ExportStorage();
-		mustache::data ExportType(const Type *type);
-		mustache::data ExportQualifiedType(const QualifiedType &qtype);
-		mustache::data ExportTemplateArgument(const TemplateArgument &argument);
-		mustache::data ExportField(const Field &field);
-		mustache::data ExportMethod(const Method &method);
-		mustache::data ExportMethodParameter(const MethodParameter &parameter);
+		mustache::data ExportType(const Type* type);
+		mustache::data ExportQualifiedType(const QualifiedType& qtype);
+		mustache::data ExportTemplateArgument(const TemplateArgument& argument);
+		mustache::data ExportField(const Field& field);
+		mustache::data ExportMethod(const Method& method);
+		mustache::data ExportMethodParameter(const MethodParameter& parameter);
 
-		void SetIncludes(const std::vector<std::string> &includes, mustache::data &data);
+		void SetIncludes(const std::vector<std::string>& includes, mustache::data& data);
 
-		const Storage *m_Storage;
+		const Storage* m_Storage;
 	};
 }
 

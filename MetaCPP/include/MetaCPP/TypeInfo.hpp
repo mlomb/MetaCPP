@@ -11,8 +11,8 @@ namespace metacpp {
 		static Type* TYPE;
 	};
 
-	template<typename T> TypeID TypeInfo<T>::ID   = 0;
-	template<typename T> Type*  TypeInfo<T>::TYPE = nullptr;
+	template<typename T> TypeID TypeInfo<T>::ID = 0;
+	template<typename T> Type* TypeInfo<T>::TYPE = nullptr;
 }
 
 #endif

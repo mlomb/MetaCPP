@@ -3,14 +3,14 @@
 #include "MetaCPP/Storage.hpp"
 
 namespace metacpp {
-	Field::Field(const QualifiedType &type, const QualifiedName &qName)
+	Field::Field(const QualifiedType& type, const QualifiedName& qName)
 			: m_Type(type),
 			  m_QualifiedName(qName),
 			  m_OffsetInBytes(0),
 			  m_Owner(0) {
 	}
 
-	const QualifiedType &Field::GetType() const {
+	const QualifiedType& Field::GetType() const {
 		return m_Type;
 	}
 
@@ -22,7 +22,7 @@ namespace metacpp {
 		return m_OffsetInBytes;
 	}
 
-	const QualifiedName &Field::GetQualifiedName() const {
+	const QualifiedName& Field::GetQualifiedName() const {
 		return m_QualifiedName;
 	}
 

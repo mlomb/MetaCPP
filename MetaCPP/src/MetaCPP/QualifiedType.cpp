@@ -10,8 +10,8 @@ namespace metacpp {
 			: m_Type(0), m_Operator(QualifierOperator::VALUE), m_Const(false) {
 	}
 
-	std::string QualifiedType::GetQualifiedName(const Storage *storage) const {
-		Type *type = storage->GetType(m_Type);
+	std::string QualifiedType::GetQualifiedName(const Storage* storage) const {
+		Type* type = storage->GetType(m_Type);
 
 		std::string result = "";
 		if (m_Const)

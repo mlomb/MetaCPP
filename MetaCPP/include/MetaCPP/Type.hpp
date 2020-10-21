@@ -32,8 +32,8 @@ namespace metacpp {
 
 	class Type {
 	public:
-        typedef std::function<void*(void*)> Constructor;
-        typedef std::function<void(void*)> Destructor;
+		typedef std::function<void*(void*)> Constructor;
+		typedef std::function<void(void*)> Destructor;
 
 		Type(const TypeID id, const QualifiedName& qName);
 
@@ -43,15 +43,15 @@ namespace metacpp {
 		AccessSpecifier GetAccess() const;
 		size_t GetArraySize() const;
 		size_t GetSize() const;
-        bool HasSize() const;
+		bool HasSize() const;
 		bool IsPrimitive() const;
 		bool IsStruct() const;
 		bool IsClass() const;
 		bool IsPolymorphic() const;
 		bool IsValid() const;
 		bool IsSTL() const;
-        bool IsSequentialContainer() const;
-        bool IsStaticArray() const;
+		bool IsSequentialContainer() const;
+		bool IsStaticArray() const;
 		bool IsAssociativeContainer() const;
 		bool IsContainer() const;
 		const std::vector<Field>& GetFields() const;
@@ -61,18 +61,18 @@ namespace metacpp {
 		const std::vector<TypeID>& GetDerivedTypes() const;
 		Container* GetContainer() const;
 
-        void* Allocate(void* ptr = 0) const;
-        void Delete(void* ptr = 0) const;
+		void* Allocate(void* ptr = 0) const;
+		void Delete(void* ptr = 0) const;
 
 		void SetKind(const TypeKind kind);
 		void SetAccess(const AccessSpecifier access);
 		void SetArraySize(const size_t arraySize);
 		void SetSize(const size_t bytes);
 		void SetPolymorphic(const bool polymorphic);
-        void SetHasDefaultConstructor(const bool hasDefaultConstructor);
-        void SetHasDefaultDestructor(const bool hasDefaultDestructor);
-        void SetConstructor(const Constructor constructor);
-        void SetDestructor(const Destructor destructor);
+		void SetHasDefaultConstructor(const bool hasDefaultConstructor);
+		void SetHasDefaultDestructor(const bool hasDefaultDestructor);
+		void SetConstructor(const Constructor constructor);
+		void SetDestructor(const Destructor destructor);
 		void SetContainer(Container* container);
 
 		void AddBaseType(const QualifiedType& baseType, const AccessSpecifier access);
@@ -90,10 +90,10 @@ namespace metacpp {
 		AccessSpecifier m_Access;
 		bool m_Polymorphic;
 		bool m_HasDefaultConstructor;
-        bool m_HasDefaultDestructor;
+		bool m_HasDefaultDestructor;
 		Container* m_Container;
-        Constructor m_Constructor;
-        Destructor m_Destructor;
+		Constructor m_Constructor;
+		Destructor m_Destructor;
 
 		std::vector<BaseType> m_BaseTypes;
 		std::vector<TypeID> m_DerivedTypes;

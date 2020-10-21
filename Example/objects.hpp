@@ -22,7 +22,7 @@ class Player : public Entity {
 public:
 	std::string name;
 
-	void Attack(Entity *entity) {
+	void Attack(Entity* entity) {
 		--entity->health;
 	}
 };
@@ -37,6 +37,7 @@ public:
 	char magic_numbers[2][2];
 	std::vector<std::vector<int>> map;
 	//std::vector<Entity*> entities;
-	std::array<Entity *, 16> entities;
+	std::array<Entity*, 16> entities;
 };
+
 #pragma pack(pop)

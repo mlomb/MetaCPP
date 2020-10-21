@@ -7,16 +7,16 @@
 #include <MetaCPP/JsonSerializer.hpp>
 
 int main() {
-	metacpp::Storage *storage = metacpp::Runtime::GetStorage();
+	metacpp::Storage* storage = metacpp::Runtime::GetStorage();
 	metacpp::generated::Load(storage);
 
-	Player *player = new Player();
+	Player* player = new Player();
 	player->health = 255;
 	player->position = {5, 5};
 	player->velocity = {1, 1};
 	player->name = "mlomb";
 
-	Monster *monster = new Monster();
+	Monster* monster = new Monster();
 	monster->health = 255;
 	monster->position = {10, 10};
 	monster->velocity = {-1, -1};
@@ -43,7 +43,7 @@ int main() {
 	std::cout << json << std::endl;
 
 	// deserialize
-	Map *deserialized_map = serializer.DeSerialize<Map>(json);
+	Map* deserialized_map = serializer.DeSerialize<Map>(json);
 
 	// serialize again and compare the jsons
 	if (serializer.Serialize(deserialized_map, true) == json) {

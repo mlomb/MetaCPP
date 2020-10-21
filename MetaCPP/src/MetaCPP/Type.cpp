@@ -4,7 +4,7 @@
 #include "MetaCPP/QualifiedType.hpp"
 
 namespace metacpp {
-	Type::Type(const TypeID id, const QualifiedName &qName)
+	Type::Type(const TypeID id, const QualifiedName& qName)
 			: m_ID(id),
 			  m_QualifiedName(qName),
 			  m_SizeInBytes(-1),
@@ -19,7 +19,7 @@ namespace metacpp {
 		return m_ID;
 	}
 
-	const QualifiedName &Type::GetQualifiedName() const {
+	const QualifiedName& Type::GetQualifiedName() const {
 		return m_QualifiedName;
 	}
 
@@ -58,17 +58,17 @@ namespace metacpp {
 	}
 
 	bool Type::IsSTL() const {
-		const Namespace &ns = m_QualifiedName.GetNamespace();
+		const Namespace& ns = m_QualifiedName.GetNamespace();
 		return ns.size() > 0 && ns[0] == "std";
 	}
 
 	bool Type::IsSequentialContainer() const {
-		const std::string &name = m_QualifiedName.GetName();
+		const std::string& name = m_QualifiedName.GetName();
 		return name == "vector" || name == "deque" || name == "array" || name == "list" || name == "forward_list";
 	}
 
 	bool Type::IsStaticArray() const {
-		const std::string &name = m_QualifiedName.GetName();
+		const std::string& name = m_QualifiedName.GetName();
 		return name == "array";
 	}
 
@@ -80,7 +80,7 @@ namespace metacpp {
 		return IsSequentialContainer() || IsAssociativeContainer();
 	}
 
-	const std::vector<Field> &Type::GetFields() const {
+	const std::vector<Field>& Type::GetFields() const {
 		return m_Fields;
 	}
 
@@ -88,19 +88,19 @@ namespace metacpp {
 		return m_TemplateArguments;
 	}
 
-	const std::vector<BaseType> &Type::GetBaseTypes() const {
+	const std::vector<BaseType>& Type::GetBaseTypes() const {
 		return m_BaseTypes;
 	}
 
-	const std::vector<TypeID> &Type::GetDerivedTypes() const {
+	const std::vector<TypeID>& Type::GetDerivedTypes() const {
 		return m_DerivedTypes;
 	}
 
-	Container *Type::GetContainer() const {
+	Container* Type::GetContainer() const {
 		return m_Container;
 	}
 
-	void *Type::Allocate(void *ptr) const {
+	void* Type::Allocate(void* ptr) const {
 		if (ptr == 0)
 			ptr = malloc(m_SizeInBytes);
 		memset(ptr, 0, m_SizeInBytes);
@@ -112,7 +112,7 @@ namespace metacpp {
 		return ptr;
 	}
 
-	void Type::Delete(void *ptr) const {
+	void Type::Delete(void* ptr) const {
 		if (m_Destructor && ptr)
 			//ptr->~T();
 			m_Destructor(ptr);
@@ -152,41 +152,41 @@ namespace metacpp {
 		m_Destructor = destructor;
 	}
 
-	void Type::SetContainer(Container *container) {
+	void Type::SetContainer(Container* container) {
 		m_Container = container;
 	}
 
-	void Type::AddBaseType(const QualifiedType &baseType, const AccessSpecifier access) {
-		m_BaseTypes.push_back(BaseType{baseType, access});
+	void Type::AddBaseType(const QualifiedType& baseType, const AccessSpecifier access) {
+		m_BaseTypes.push_back(BaseType{ baseType, access });
 	}
 
 	void Type::AddDerivedType(TypeID typeID) {
 		m_DerivedTypes.push_back(typeID);
 	}
 
-	void Type::AddTemplateArgument(const TemplateArgument &arg, const int pos) {
+	void Type::AddTemplateArgument(const TemplateArgument& arg, const int pos) {
 		if (pos == -1)
 			m_TemplateArguments.push_back(arg);
 		else
 			m_TemplateArguments.insert(m_TemplateArguments.begin() + pos, arg);
 	}
 
-	void Type::AddField(Field &field) {
+	void Type::AddField(Field& field) {
 		field.SetOwner(m_ID);
 		m_Fields.emplace_back(field);
 	}
 
-	void Type::AddMethod(Method &method) {
+	void Type::AddMethod(Method& method) {
 		method.SetOwner(m_ID);
 		m_Methods.emplace_back(method);
 	}
 
 	bool Type::HasSize() const {
-		const std::string &name = m_QualifiedName.GetName();
+		const std::string& name = m_QualifiedName.GetName();
 		return name != "void" && name != "_Alloc_hider";
 	}
 
-	const std::vector<Method> &Type::GetMethods() const {
+	const std::vector<Method>& Type::GetMethods() const {
 		return m_Methods;
 	}
 

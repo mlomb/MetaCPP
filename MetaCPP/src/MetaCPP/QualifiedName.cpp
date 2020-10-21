@@ -9,11 +9,11 @@ namespace metacpp {
 			: m_Namespace({}), m_Name(""), m_TemplateArgs("") {
 	}
 
-	QualifiedName::QualifiedName(const Namespace &namespace_, const std::string &name, const std::string &templateArgs, const std::string &arraySize)
+	QualifiedName::QualifiedName(const Namespace& namespace_, const std::string& name, const std::string& templateArgs, const std::string& arraySize)
 			: m_Namespace(namespace_), m_Name(name), m_TemplateArgs(templateArgs), m_ArraySize(arraySize) {
 	}
 
-	QualifiedName::QualifiedName(const Namespace &namespace_)
+	QualifiedName::QualifiedName(const Namespace& namespace_)
 			: m_Namespace(namespace_), m_Name(""), m_TemplateArgs(""), m_ArraySize("") {
 		if (!namespace_.empty()) {
 			m_Name = namespace_.back();
@@ -77,7 +77,7 @@ namespace metacpp {
 
 	std::string QualifiedName::FullQualified() const {
 		std::stringstream ss;
-		for (const std::string &s : m_Namespace)
+		for (const std::string& s : m_Namespace)
 			ss << s << "::";
 		if (!m_Name.empty()) {
 			ss << m_Name;
@@ -102,13 +102,13 @@ namespace metacpp {
 		return m_Name + (m_TemplateArgs.size() > 0 ? "<" + m_TemplateArgs + ">" : "");
 	}
 
-	const Namespace &QualifiedName::GetNamespace() const {
+	const Namespace& QualifiedName::GetNamespace() const {
 		return m_Namespace;
 	}
 
 	std::string QualifiedName::MemberQualified(const std::string& name) const {
 		std::stringstream ss;
-		for (const std::string &s : m_Namespace)
+		for (const std::string& s : m_Namespace)
 			ss << s << "::";
 		if (!m_Name.empty()) {
 			ss << m_Name;

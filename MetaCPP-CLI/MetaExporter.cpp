@@ -6,68 +6,68 @@
 #include "Templates.hpp"
 
 namespace metacpp {
-	MetaExporter::MetaExporter(const Storage *storage)
+	MetaExporter::MetaExporter(const Storage* storage)
 			: m_Storage(storage) {
 	}
 
-	void MetaExporter::Export(const std::string &inputSource, const std::string &outputHeader, const std::string &outputSource) {
+	void MetaExporter::Export(const std::string& inputSource, const std::string& outputHeader, const std::string& outputSource) {
 		std::ofstream out_header(outputHeader);
 		std::ofstream out_source(outputSource);
 
 		mustache::data storageData = ExportStorage();
 
-		out_source << GenerateSourceFile({outputHeader}, storageData);
-		out_header << GenerateHeaderFile({inputSource}, storageData);
+		out_source << GenerateSourceFile({ outputHeader }, storageData);
+		out_header << GenerateHeaderFile({ inputSource }, storageData);
 	}
 
-	std::string MetaExporter::GenerateSourceFile(const std::vector<std::string> &includes, mustache::data &storageData) {
+	std::string MetaExporter::GenerateSourceFile(const std::vector<std::string>& includes, mustache::data& storageData) {
 		mustache::mustache source_template(templates::source);
-		source_template.set_custom_escape([](const std::string &str) { return str; });
+		source_template.set_custom_escape([](const std::string& str) { return str; });
 
 		SetIncludes(includes, storageData);
 
 		return source_template.render(storageData);
 	}
 
-	std::string MetaExporter::GenerateHeaderFile(const std::vector<std::string> &includes, mustache::data &storageData) {
+	std::string MetaExporter::GenerateHeaderFile(const std::vector<std::string>& includes, mustache::data& storageData) {
 		mustache::mustache header_template(templates::header);
-		header_template.set_custom_escape([](const std::string &str) { return str; });
+		header_template.set_custom_escape([](const std::string& str) { return str; });
 
 		SetIncludes(includes, storageData);
 
 		return header_template.render(storageData);
 	}
 
-	void MetaExporter::SetIncludes(const std::vector<std::string> &includes, mustache::data &data) {
-		mustache::data inclds{mustache::data::type::list};
-		for (const std::string &file : includes)
-			inclds << mustache::data{"file", file};
-		data["includes"] = mustache::data{inclds};
+	void MetaExporter::SetIncludes(const std::vector<std::string>& includes, mustache::data& data) {
+		mustache::data inclds{ mustache::data::type::list };
+		for (const std::string& file : includes)
+			inclds << mustache::data{ "file", file };
+		data["includes"] = mustache::data{ inclds };
 	}
 
 	mustache::data MetaExporter::ExportStorage() {
 		mustache::data data;
 
 		// IDs
-		mustache::data ids{mustache::data::type::list};
-		for (const auto &kv : m_Storage->m_IDs) {
+		mustache::data ids{ mustache::data::type::list };
+		for (const auto& kv : m_Storage->m_IDs) {
 			mustache::data entry;
 			entry["id"] = std::to_string(kv.second);
 			entry["qualifiedName"] = kv.first;
 			ids << entry;
 		}
-		data["ids"] = mustache::data{ids};
+		data["ids"] = mustache::data{ ids };
 
 		// Types
-		mustache::data types{mustache::data::type::list};
-		for (const auto &kv : m_Storage->m_Types)
+		mustache::data types{ mustache::data::type::list };
+		for (const auto& kv : m_Storage->m_Types)
 			types << ExportType(kv.second);
-		data["types"] = mustache::data{types};
+		data["types"] = mustache::data{ types };
 
 		return data;
 	}
 
-	mustache::data MetaExporter::ExportType(const Type *type) {
+	mustache::data MetaExporter::ExportType(const Type* type) {
 		mustache::data data;
 		data["id"] = std::to_string(type->m_ID);
 		data["qualifiedName"] = type->m_QualifiedName.FullQualified();
@@ -97,8 +97,8 @@ namespace metacpp {
 		data["isContainer"] = std::to_string(seqContainer || assocContainer);
 
 		// Base Types
-		mustache::data baseTypes{mustache::data::type::list};
-		for (const BaseType &base : type->m_BaseTypes) {
+		mustache::data baseTypes{ mustache::data::type::list };
+		for (const BaseType& base : type->m_BaseTypes) {
 			mustache::data baseType;
 			baseType["qualifiedType"] = ExportQualifiedType(base.type);
 			baseType["access"] = std::to_string(base.access);
@@ -106,9 +106,9 @@ namespace metacpp {
 		}
 
 		// Derived Types
-		mustache::data derivedTypes{mustache::data::type::list};
+		mustache::data derivedTypes{ mustache::data::type::list };
 		for (const TypeID derived_typeid : type->m_DerivedTypes) {
-			Type *derived_type = m_Storage->GetType(derived_typeid);
+			Type* derived_type = m_Storage->GetType(derived_typeid);
 			if (!derived_type->IsValid())
 				continue;
 
@@ -119,31 +119,31 @@ namespace metacpp {
 		}
 
 		// Template Arguments
-		mustache::data templateArguments{mustache::data::type::list};
-		for (const TemplateArgument &arg : type->m_TemplateArguments) {
+		mustache::data templateArguments{ mustache::data::type::list };
+		for (const TemplateArgument& arg : type->m_TemplateArguments) {
 			templateArguments << ExportTemplateArgument(arg);
 		}
 
 		// Fields
-		mustache::data fields{mustache::data::type::list};
-		for (const Field &field : type->m_Fields)
+		mustache::data fields{ mustache::data::type::list };
+		for (const Field& field : type->m_Fields)
 			fields << ExportField(field);
 
 		// Methods
-		mustache::data methods{mustache::data::type::list};
-		for (const Method &method : type->m_Methods)
+		mustache::data methods{ mustache::data::type::list };
+		for (const Method& method : type->m_Methods)
 			methods << ExportMethod(method);
 
-		data["fields"] = mustache::data{fields};
-		data["methods"] = mustache::data{methods};
-		data["baseTypes"] = mustache::data{baseTypes};
-		data["derivedTypes"] = mustache::data{derivedTypes};
-		data["templateArguments"] = mustache::data{templateArguments};
+		data["fields"] = mustache::data{ fields };
+		data["methods"] = mustache::data{ methods };
+		data["baseTypes"] = mustache::data{ baseTypes };
+		data["derivedTypes"] = mustache::data{ derivedTypes };
+		data["templateArguments"] = mustache::data{ templateArguments };
 
 		return data;
 	}
 
-	mustache::data MetaExporter::ExportQualifiedType(const QualifiedType &qtype) {
+	mustache::data MetaExporter::ExportQualifiedType(const QualifiedType& qtype) {
 		mustache::data data;
 		data["typeID"] = std::to_string(qtype.m_Type);
 		data["const"] = std::to_string(qtype.m_Const);
@@ -152,7 +152,7 @@ namespace metacpp {
 		return data;
 	}
 
-	mustache::data MetaExporter::ExportField(const Field &field) {
+	mustache::data MetaExporter::ExportField(const Field& field) {
 		mustache::data data;
 		data["ownerId"] = std::to_string(field.m_Owner);
 		data["qualifiedType"] = ExportQualifiedType(field.m_Type);
@@ -162,13 +162,13 @@ namespace metacpp {
 		return data;
 	}
 
-	mustache::data MetaExporter::ExportTemplateArgument(const TemplateArgument &argument) {
+	mustache::data MetaExporter::ExportTemplateArgument(const TemplateArgument& argument) {
 		mustache::data data;
 
 		if (std::holds_alternative<QualifiedType>(argument)) {
 			data["isIntegral"] = std::to_string(false);
 			data["integralValue"] = std::to_string(0);
-			const QualifiedType &qtype = std::get<QualifiedType>(argument);
+			const QualifiedType& qtype = std::get<QualifiedType>(argument);
 			data["typeID"] = std::to_string(qtype.m_Type);
 			data["const"] = std::to_string(qtype.m_Const);
 			data["operator"] = std::to_string(qtype.m_Operator);
@@ -184,19 +184,19 @@ namespace metacpp {
 		return data;
 	}
 
-	mustache::data MetaExporter::ExportMethod(const Method &method) {
+	mustache::data MetaExporter::ExportMethod(const Method& method) {
 		mustache::data data;
 		data["qualifiedName"] = method.m_QualifiedName.FullQualified();
 
-		mustache::data params{mustache::data::type::list};
-		for (const MethodParameter &parameter : method.m_Parameters)
+		mustache::data params{ mustache::data::type::list };
+		for (const MethodParameter& parameter : method.m_Parameters)
 			params << ExportMethodParameter(parameter);
 
-		data["methodParams"] = mustache::data{params};
+		data["methodParams"] = mustache::data{ params };
 		return data;
 	}
 
-	mustache::data MetaExporter::ExportMethodParameter(const MethodParameter &parameter) {
+	mustache::data MetaExporter::ExportMethodParameter(const MethodParameter& parameter) {
 		mustache::data data;
 		data["methodParamName"] = parameter.GetName();
 		data["qualifiedType"] = ExportQualifiedType(parameter.GetType());

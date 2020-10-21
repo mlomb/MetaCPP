@@ -17,7 +17,8 @@ namespace metacpp {
 		// For now
 		flags.push_back("-D_DEBUG");
 #endif
-		flags.push_back("-I/usr/local/lib/clang/12.0.0/include");
+		flags.push_back("-xc++");
+		flags.push_back("-std=c++17");
 
 		m_CompilationDatabase = new clang::tooling::FixedCompilationDatabase(".", flags);
 		m_ClangTool = new clang::tooling::ClangTool(*m_CompilationDatabase, source);
@@ -28,42 +29,42 @@ namespace metacpp {
 		delete m_ClangTool;
 	}
 
-	void ScraperTool::Run(ASTScraper *scraper) {
+	void ScraperTool::Run(ASTScraper* scraper) {
 		// Consumer
 		class ASTScraperConsumer : public clang::ASTConsumer {
 		public:
-			ASTScraperConsumer(ASTScraper *scraper) : scraper(scraper) {};
+			ASTScraperConsumer(ASTScraper* scraper) : scraper(scraper) {};
 
-			void HandleTranslationUnit(clang::ASTContext &context) {
+			void HandleTranslationUnit(clang::ASTContext& context) {
 				scraper->ScrapeTranslationUnit(context.getTranslationUnitDecl());
 			}
 
 		private:
-			ASTScraper *scraper;
+			ASTScraper* scraper;
 		};
 
 		// Action
 		class ASTScraperAction : public clang::ASTFrontendAction {
 		public:
-			ASTScraperAction(ASTScraper *scraper) : scraper(scraper) {};
+			ASTScraperAction(ASTScraper* scraper) : scraper(scraper) {};
 
-			std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &Compiler, llvm::StringRef InFile) override {
+			std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance& Compiler, llvm::StringRef InFile) override {
 				scraper->SetContext(&Compiler.getASTContext());
 				return std::unique_ptr<clang::ASTConsumer>(new ASTScraperConsumer(scraper));
 			};
 		private:
-			ASTScraper *scraper;
+			ASTScraper* scraper;
 		};
 
 		// Factory
 		class ActionFactory : public clang::tooling::FrontendActionFactory {
 		public:
-			ActionFactory(ASTScraper *scraper) : scraper(scraper) {};
+			ActionFactory(ASTScraper* scraper) : scraper(scraper) {};
 
 			std::unique_ptr<FrontendAction> create() override { return std::make_unique<ASTScraperAction>(scraper); }
 
 		private:
-			ASTScraper *scraper;
+			ASTScraper* scraper;
 		};
 		auto scraperActionFactory = std::unique_ptr<ActionFactory>(new ActionFactory(scraper));
 
