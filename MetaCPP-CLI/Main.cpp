@@ -30,8 +30,13 @@ int main(int argc, const char** argv) {
 
 		metacpp::ASTScraper* scraper = new metacpp::ASTScraper(storage, configuration);
 		metacpp::ScraperTool tool(InputSource, CompilerFlags);
-		tool.Run(scraper);
+		bool success = tool.Run(scraper);
 		delete scraper;
+
+		if (!success) {
+			delete storage;
+			return 1;
+		}
 	}
 
 	// Export Metadata
@@ -39,6 +44,8 @@ int main(int argc, const char** argv) {
 		metacpp::MetaExporter exporter(storage);
 		exporter.Export(InputSource, OutputHeader, OutputSource);
 	}
+
+	delete storage;
 
 	return 0;
 }

@@ -15,7 +15,7 @@ namespace metacpp {
 		ScraperTool(std::string source, std::vector<std::string> flags);
 		~ScraperTool();
 
-		void Run(ASTScraper* scraper);
+		bool Run(ASTScraper* scraper);
 
 	private:
 		clang::tooling::FixedCompilationDatabase* m_CompilationDatabase;

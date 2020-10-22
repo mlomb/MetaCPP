@@ -29,7 +29,7 @@ namespace metacpp {
 		delete m_ClangTool;
 	}
 
-	void ScraperTool::Run(ASTScraper* scraper) {
+	bool ScraperTool::Run(ASTScraper* scraper) {
 		// Consumer
 		class ASTScraperConsumer : public clang::ASTConsumer {
 		public:
@@ -68,6 +68,6 @@ namespace metacpp {
 		};
 		auto scraperActionFactory = std::unique_ptr<ActionFactory>(new ActionFactory(scraper));
 
-		m_ClangTool->run(scraperActionFactory.get());
+		return m_ClangTool->run(scraperActionFactory.get()) == 0;
 	}
 }
