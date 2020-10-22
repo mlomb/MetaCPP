@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <clang/AST/ASTContext.h>
+#include <clang/AST/PrettyPrinter.h>
 #include <clang/AST/RecordLayout.h>
 #include <clang/AST/DeclTemplate.h>
 #include <clang/AST/VTableBuilder.h>
