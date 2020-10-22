@@ -21,7 +21,7 @@ jobs:
         mkdir ${{runner.workspace}}/llvm
         tar -xf clang+llvm-11.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz -C ${{runner.workspace}}/llvm
         echo "${{runner.workspace}}/llvm/clang+llvm-11.0.0-x86_64-linux-gnu-ubuntu-20.04/bin" >> $GITHUB_PATH
-
+    
     - uses: actions/checkout@v2
       with:
         submodules: 'true'
@@ -41,4 +41,4 @@ jobs:
     - name: Run Example
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: ./${{runner.workspace}}/build/Example
+      run: ./Example

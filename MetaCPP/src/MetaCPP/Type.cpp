@@ -183,7 +183,7 @@ namespace metacpp {
 
 	bool Type::HasSize() const {
 		const std::string& name = m_QualifiedName.GetName();
-		return name != "void" && name != "_Alloc_hider";
+		return name != "void" && name != "_Alloc_hider" && m_Access == AccessSpecifier::PUBLIC;
 	}
 
 	const std::vector<Method>& Type::GetMethods() const {

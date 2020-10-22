@@ -10,7 +10,7 @@ find_Package(Clang REQUIRED)
 
 # LLVM
 link_directories(${LLVM_LIB_DIR})
-# add_definitions(${LLVM_COMPILE_FLAGS})
+#add_definitions(${LLVM_COMPILE_FLAGS})
 add_definitions(-fno-rtti) # this should match the LLVM rtti flag
 
 set(MetaCPPCLI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
