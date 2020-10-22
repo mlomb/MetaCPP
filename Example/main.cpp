@@ -40,18 +40,20 @@ int main() {
 
 	// serialize
 	std::string json = serializer.Serialize(&map, true /* pretty print */);
-	std::cout << json << std::endl;
+	std::cout << "Original: " << json << std::endl;
 
 	// deserialize
 	Map* deserialized_map = serializer.DeSerialize<Map>(json);
 
 	// serialize again and compare the jsons
-	if (serializer.Serialize(deserialized_map, true) == json) {
+	std::string reserialized = serializer.Serialize(deserialized_map, true);
+	if (reserialized == json) {
 		std::cout << "The serialization was successful!" << std::endl;
 		return 0;
 	}
 	else {
-		std::cout << "The serialization did not match" << std::endl;
+		std::cout << "The serialization did not match!" << std::endl;
+		std::cout << "Reserialized: " << reserialized << std::endl;
 		return 1;
 	}
 }
