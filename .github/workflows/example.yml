@@ -1,0 +1,42 @@
+name: CMake
+
+on: [push]
+
+env:
+  BUILD_TYPE: Release
+  CXX: clang++
+  CC: clang
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Download Libtooling
+      uses: wei/wget@v1
+      with:
+        args: https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang+llvm-11.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz
+    - name: Extract Libtooling
+      run: |
+        mkdir ${{runner.workspace}}/llvm
+        tar -xf clang+llvm-11.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz -C ${{runner.workspace}}/llvm
+        echo "${{runner.workspace}}/llvm/clang+llvm-11.0.0-x86_64-linux-gnu-ubuntu-20.04/bin" >> $GITHUB_PATH
+
+    - uses: actions/checkout@v2
+
+    - name: Create build directory
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Generate project
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE/Example -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: cmake --build . --config $BUILD_TYPE
+      
+    - name: Run Example
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: ./${{runner.workspace}}/build/Example
