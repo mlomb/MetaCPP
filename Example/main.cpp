@@ -48,7 +48,10 @@ int main() {
 	// serialize again and compare the jsons
 	if (serializer.Serialize(deserialized_map, true) == json) {
 		std::cout << "The serialization was successful!" << std::endl;
+		return 0;
 	}
-
-	return 0;
+	else {
+		std::cout << "The serialization did not match" << std::endl;
+		return 1;
+	}
 }
