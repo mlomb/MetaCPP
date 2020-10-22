@@ -23,6 +23,7 @@ jobs:
         echo "${{runner.workspace}}/llvm/clang+llvm-11.0.0-x86_64-linux-gnu-ubuntu-20.04/bin" >> $GITHUB_PATH
 
     - uses: actions/checkout@v2
+      submodules: 'true'
 
     - name: Create build directory
       run: cmake -E make_directory ${{runner.workspace}}/build
