@@ -55,12 +55,14 @@ namespace metacpp {
 		class ActionFactory : public clang::tooling::FrontendActionFactory {
 		public:
 			ActionFactory(ASTScraper* scraper) : scraper(scraper) {};
-			clang::FrontendAction *create() override { return new ASTScraperAction(scraper); }
+
+			std::unique_ptr<clang::FrontendAction> create() override { return std::make_unique<ASTScraperAction>(scraper); }
+
 		private:
 			ASTScraper* scraper;
 		};
-		auto scraperAction = std::unique_ptr<ActionFactory>(new ActionFactory(scraper));
-
-		m_ClangTool->run(scraperAction.get());
+		auto scraperActionFactory = std::unique_ptr<ActionFactory>(new ActionFactory(scraper));
+		
+		m_ClangTool->run(scraperActionFactory.get());
 	}
 }

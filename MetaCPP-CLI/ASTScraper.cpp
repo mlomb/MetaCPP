@@ -149,7 +149,7 @@ namespace metacpp {
 			static clang::PrintingPolicy printing_policy(lang_opts);
 
 			auto builtin = cType->getAs<clang::BuiltinType>();
-			std::string name = builtin->getName(printing_policy);
+			std::string name = builtin->getName(printing_policy).str();
 			if (name == "_Bool")
 				name = "bool";
 			qualifiedName = QualifiedName({}, name);

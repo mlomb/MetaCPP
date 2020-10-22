@@ -5,6 +5,7 @@
 #include <string>
 
 #include <clang/Tooling/Tooling.h>
+#include <clang/Tooling/CompilationDatabase.h>
 
 namespace metacpp {
 	class ASTScraper;
