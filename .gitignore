@@ -34,3 +34,7 @@ Builds/
 *.out
 *.app
 *.ps1
+
+.idea
+cmake-build-debug
+cmake-build-release

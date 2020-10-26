@@ -1,6 +1,9 @@
 #include <string>
 #include <vector>
+#include <array>
 
+// TODO: Support alignment.
+#pragma pack(push, 1)
 template<typename T>
 struct Vector {
 	T x, y;
@@ -18,6 +21,10 @@ public:
 class Player : public Entity {
 public:
 	std::string name;
+
+	void Attack(Entity* entity) {
+		--entity->health;
+	}
 };
 
 class Monster : public Entity {
@@ -29,5 +36,8 @@ class Map {
 public:
 	std::vector<int> magic_numbers;
 	std::vector<std::vector<int>> map;
-	std::vector<Entity*> entities;
+	//std::vector<Entity*> entities;
+	std::array<Entity*, 16> entities;
 };
+
+#pragma pack(pop)

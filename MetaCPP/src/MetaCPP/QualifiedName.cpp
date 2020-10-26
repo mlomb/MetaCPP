@@ -1,21 +1,20 @@
 #include "MetaCPP/QualifiedName.hpp"
 
+#include <iostream>
 #include <sstream>
 #include <algorithm>
 
 namespace metacpp {
 	QualifiedName::QualifiedName()
-		: m_Namespace({}), m_Name(""), m_TemplateArgs("")
-	{
+			: m_Namespace({}), m_Name(""), m_TemplateArgs(""), m_ArraySize("") {
 	}
 
-	QualifiedName::QualifiedName(const Namespace& namespace_, const std::string& name, const std::string& templateArgs)
-		: m_Namespace(namespace_), m_Name(name), m_TemplateArgs(templateArgs)
-	{
+	QualifiedName::QualifiedName(const Namespace& namespace_, const std::string& name, const std::string& templateArgs, const std::string& arraySize)
+			: m_Namespace(namespace_), m_Name(name), m_TemplateArgs(templateArgs), m_ArraySize(arraySize) {
 	}
 
 	QualifiedName::QualifiedName(const Namespace& namespace_)
-		: m_Namespace(namespace_), m_Name(""), m_TemplateArgs("") {
+			: m_Namespace(namespace_), m_Name(""), m_TemplateArgs(""), m_ArraySize("") {
 		if (!namespace_.empty()) {
 			m_Name = namespace_.back();
 			m_Namespace.pop_back();
@@ -39,15 +38,26 @@ namespace metacpp {
 				m_Namespace.push_back(ss.str());
 				ss.str("");
 				pos++;
-			}
-			else {
+			} else if (c == '[' && bracketLevel == 0) {
+				ss.seekg(0, std::ios::end);
+				if ((int) ss.tellg() != 0)
+					m_Namespace.push_back(ss.str());
+				ss.str("");
+			} else if (c == ']' && bracketLevel == 0) {
+				ss.seekg(0, std::ios::end);
+				if ((int) ss.tellg() != 0) {
+					m_ArraySize = ss.str();
+					// std::cout << "ArraySize read: " << m_ArraySize << " for " << fullQualified << std::endl;
+				}
+				ss.str("");
+			} else {
 				ss << c;
 				if (c == '<') bracketLevel++;
 				else if (c == '>') bracketLevel--;
 			}
 		}
 		ss.seekg(0, std::ios::end);
-		if ((int)ss.tellg() != 0)
+		if ((int) ss.tellg() != 0)
 			m_Namespace.push_back(ss.str());
 
 		if (!m_Namespace.empty()) {
@@ -73,29 +83,55 @@ namespace metacpp {
 			ss << m_Name;
 			if (!m_TemplateArgs.empty())
 				ss << "<" << m_TemplateArgs << ">";
-		}
-		else
+			if (!m_ArraySize.empty())
+				ss << "[" << m_ArraySize << "]";
+		} else
 			ss.seekp(-2, std::ios_base::end);
 		return ss.str();
 	}
 
-	std::string QualifiedName::GetName() const
-	{
+	std::string QualifiedName::GetName() const {
 		return m_Name;
 	}
-	
-	std::string QualifiedName::GetTemplateArgs() const
-	{
+
+	std::string QualifiedName::GetTemplateArgs() const {
 		return m_TemplateArgs;
 	}
 
-	std::string QualifiedName::GetTemplatedName() const
-	{
+	std::string QualifiedName::GetTemplatedName() const {
 		return m_Name + (m_TemplateArgs.size() > 0 ? "<" + m_TemplateArgs + ">" : "");
 	}
 
-	const Namespace& QualifiedName::GetNamespace() const
-	{
+	const Namespace& QualifiedName::GetNamespace() const {
 		return m_Namespace;
+	}
+
+	std::string QualifiedName::MemberQualified(const std::string& name) const {
+		std::stringstream ss;
+		for (const std::string& s : m_Namespace)
+			ss << s << "::";
+		if (!m_Name.empty()) {
+			ss << m_Name;
+			if (!m_TemplateArgs.empty())
+				ss << "<" << m_TemplateArgs << ">";
+			ss << " " << name;
+			if (!m_ArraySize.empty())
+				ss << "[" << m_ArraySize << "]";
+		} else
+			ss.seekp(-2, std::ios_base::end);
+		return ss.str();
+	}
+
+	std::string QualifiedName::ElementTypeQualified() const {
+		std::stringstream ss;
+		for (const std::string& s : m_Namespace)
+			ss << s << "::";
+		if (!m_Name.empty()) {
+			ss << m_Name;
+			if (!m_TemplateArgs.empty())
+				ss << "<" << m_TemplateArgs << ">";
+		} else
+			ss.seekp(-2, std::ios_base::end);
+		return ss.str();
 	}
 }

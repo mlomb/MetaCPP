@@ -2,12 +2,14 @@
 #define METACPP_ASTSCRAPER_HPP
 
 #include <clang/AST/DeclCXX.h>
+#include <clang/AST/ASTImporter.h>
 
 #include "MetaCPP/Storage.hpp"
 #include "MetaCPP/QualifiedName.hpp"
 #include "MetaCPP/QualifiedType.hpp"
 
 namespace metacpp {
+
 	class ASTScraper {
 	public:
 		struct Configuration {
@@ -21,12 +23,12 @@ namespace metacpp {
 		void ScrapeNamedDecl(const clang::NamedDecl* namedDecl, Type* parent);
 
 		Type* ScrapeCXXRecordDecl(const clang::CXXRecordDecl* cxxRecordDecl, Type* parent);
-		std::vector<QualifiedType> ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName);
-		Type* ScrapeType(const clang::Type* cType);
+		std::vector<TemplateArgument> ResolveCXXRecordTemplate(const clang::CXXRecordDecl* cxxRecordDecl, QualifiedName& qualifiedName);
+		Type* ScrapeType(const clang::Type* cType, size_t arraySize);
 		void ScrapeFieldDecl(const clang::FieldDecl* fieldDecl, Type* parent);
 		void ScrapeMethodDecl(const clang::CXXMethodDecl* cxxMethodDecl, Type* parent);
 
-		QualifiedType ResolveQualType(clang::QualType qualType);
+		QualifiedType ResolveQualType(clang::QualType qualType, size_t arraySize);
 		std::vector<std::string> ScrapeAnnotations(const clang::Decl* decl);
 
 		/* Utility */

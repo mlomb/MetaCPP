@@ -8,13 +8,17 @@
 
 #include "ASTScraper.hpp"
 
+using namespace clang;
+using namespace clang::tooling;
+
 namespace metacpp {
-	ScraperTool::ScraperTool(std::string source, std::vector<std::string> flags)
-	{
+	ScraperTool::ScraperTool(std::string source, std::vector<std::string> flags) {
 #if _DEBUG
 		// For now
 		flags.push_back("-D_DEBUG");
 #endif
+		flags.push_back("-xc++");
+		flags.push_back("-std=c++17");
 
 		m_CompilationDatabase = new clang::tooling::FixedCompilationDatabase(".", flags);
 		m_ClangTool = new clang::tooling::ClangTool(*m_CompilationDatabase, source);
@@ -25,8 +29,7 @@ namespace metacpp {
 		delete m_ClangTool;
 	}
 
-	void ScraperTool::Run(ASTScraper* scraper)
-	{
+	bool ScraperTool::Run(ASTScraper* scraper) {
 		// Consumer
 		class ASTScraperConsumer : public clang::ASTConsumer {
 		public:
@@ -35,6 +38,7 @@ namespace metacpp {
 			void HandleTranslationUnit(clang::ASTContext& context) {
 				scraper->ScrapeTranslationUnit(context.getTranslationUnitDecl());
 			}
+
 		private:
 			ASTScraper* scraper;
 		};
@@ -43,6 +47,7 @@ namespace metacpp {
 		class ASTScraperAction : public clang::ASTFrontendAction {
 		public:
 			ASTScraperAction(ASTScraper* scraper) : scraper(scraper) {};
+
 			std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance& Compiler, llvm::StringRef InFile) override {
 				scraper->SetContext(&Compiler.getASTContext());
 				return std::unique_ptr<clang::ASTConsumer>(new ASTScraperConsumer(scraper));
@@ -56,13 +61,13 @@ namespace metacpp {
 		public:
 			ActionFactory(ASTScraper* scraper) : scraper(scraper) {};
 
-			std::unique_ptr<clang::FrontendAction> create() override { return std::make_unique<ASTScraperAction>(scraper); }
+			std::unique_ptr<FrontendAction> create() override { return std::make_unique<ASTScraperAction>(scraper); }
 
 		private:
 			ASTScraper* scraper;
 		};
 		auto scraperActionFactory = std::unique_ptr<ActionFactory>(new ActionFactory(scraper));
-		
-		m_ClangTool->run(scraperActionFactory.get());
+
+		return m_ClangTool->run(scraperActionFactory.get()) == 0;
 	}
 }

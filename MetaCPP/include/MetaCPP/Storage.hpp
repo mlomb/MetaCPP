@@ -42,8 +42,7 @@ namespace metacpp {
 	};
 
 	template<typename T>
-	inline Type* Storage::GetType() const
-	{
+	inline Type* Storage::GetType() const {
 		return TypeInfo<T>::TYPE;
 	}
 }

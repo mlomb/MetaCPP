@@ -24,26 +24,33 @@ int main() {
 
 	Map map;
 	map.entities = { player, monster };
+
 	map.magic_numbers = { 4, 2 };
+
 	map.map = {
-		{ 1, 2, 3 },
-		{ 4, 5, 6 },
-		{ 7, 8, 9 },
+			{ 1, 2, 3 },
+			{ 4, 5, 6 },
+			{ 7, 8, 9 },
 	};
 
 	metacpp::JsonSerializer serializer = metacpp::JsonSerializer(storage);
 
 	// serialize
 	std::string json = serializer.Serialize(&map, true /* pretty print */);
-	std::cout << json << std::endl;
+	std::cout << "Original: " << json << std::endl;
 
 	// deserialize
 	Map* deserialized_map = serializer.DeSerialize<Map>(json);
 
 	// serialize again and compare the jsons
-	if (serializer.Serialize(deserialized_map, true) == json){
+	std::string reserialized = serializer.Serialize(deserialized_map, true);
+	if (reserialized == json) {
 		std::cout << "The serialization was successful!" << std::endl;
+		return 0;
 	}
-
-	return 0;
+	else {
+		std::cout << "The serialization did not match!" << std::endl;
+		std::cout << "Reserialized: " << reserialized << std::endl;
+		return 1;
+	}
 }

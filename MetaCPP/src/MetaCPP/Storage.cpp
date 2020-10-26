@@ -13,25 +13,21 @@ namespace metacpp {
 
 	}
 
-	TypeID Storage::GetTypeID(const std::string& name) const
-	{
+	TypeID Storage::GetTypeID(const std::string& name) const {
 		auto it = m_IDs.find(name);
 		return it != m_IDs.end() ? (*it).second : 0;
 	}
 
-	Type* Storage::GetType(const TypeID typeId) const
-	{
+	Type* Storage::GetType(const TypeID typeId) const {
 		auto it = m_Types.find(typeId);
 		return it != m_Types.end() ? (*it).second : nullptr;
 	}
 
-	Type* Storage::GetType(const std::string& name) const
-	{
+	Type* Storage::GetType(const std::string& name) const {
 		return GetType(GetTypeID(name));
 	}
 
-	TypeID Storage::AssignTypeID(const std::string& name, const TypeID typeId)
-	{
+	TypeID Storage::AssignTypeID(const std::string& name, const TypeID typeId) {
 		TypeID _id = GetTypeID(name);
 		if (_id != 0 && (typeId == 0 || _id == typeId))
 			return _id;
@@ -45,24 +41,20 @@ namespace metacpp {
 		return _id;
 	}
 
-	void Storage::AddType(Type* type)
-	{
+	void Storage::AddType(Type* type) {
 		m_Types.insert(std::make_pair(type->GetTypeID(), type));
 	}
 
-	void Storage::AddDynamicCast(TypeID base, TypeID derived, const DynamicCast& dc)
-	{
-		int index = (size_t)base << 32 | (unsigned int)derived;
-		m_DynamicCasts.insert(std::make_pair(index , dc));
+	void Storage::AddDynamicCast(TypeID base, TypeID derived, const DynamicCast& dc) {
+		int index = (size_t) base << 32 | (unsigned int) derived;
+		m_DynamicCasts.insert(std::make_pair(index, dc));
 	}
 
-	bool Storage::HasType(const TypeID typeId) const
-	{
+	bool Storage::HasType(const TypeID typeId) const {
 		return m_Types.count(typeId);
 	}
-	
-	bool Storage::IsDerived(const TypeID derived, const TypeID base) const
-	{
+
+	bool Storage::IsDerived(const TypeID derived, const TypeID base) const {
 		Type* derivedType = GetType(derived);
 		if (derivedType == 0)
 			return false;
@@ -77,8 +69,7 @@ namespace metacpp {
 		return false;
 	}
 
-	std::vector<Field> Storage::GetAllFields(const Type* type)
-	{
+	std::vector<Field> Storage::GetAllFields(const Type* type) {
 		std::vector<Field> fields;
 
 		for (auto& baseType : type->GetBaseTypes()) {
@@ -97,7 +88,7 @@ namespace metacpp {
 
 	std::pair<const Type*, void*> Storage::ResolveDerivedType(const Type* baseClass, void* base_ptr) {
 		for (const TypeID derived_id : baseClass->GetDerivedTypes()) {
-			int index = (size_t)baseClass->GetTypeID() << 32 | (unsigned int)derived_id;
+			int index = (size_t) baseClass->GetTypeID() << 32 | (unsigned int) derived_id;
 			auto it = m_DynamicCasts.find(index);
 			if (it != m_DynamicCasts.end()) {
 				const DynamicCast& dc = (*it).second;
@@ -109,8 +100,7 @@ namespace metacpp {
 		return std::make_pair(baseClass, base_ptr);
 	}
 
-	Type* Storage::FindDerivedTypeWithName(const Type* base, const std::string& derived_name)
-	{
+	Type* Storage::FindDerivedTypeWithName(const Type* base, const std::string& derived_name) {
 		for (const TypeID derived_id : base->GetDerivedTypes()) {
 			Type* derived_type = GetType(derived_id);
 			if (derived_type->GetQualifiedName().GetTemplatedName() == derived_name)

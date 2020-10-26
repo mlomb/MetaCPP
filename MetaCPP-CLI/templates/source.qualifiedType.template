@@ -1,8 +1,9 @@
 R"(
-				QualifiedType qualifiedType;
-				{{#typeID}}
-				qualifiedType.SetTypeID({{typeID}});
-				qualifiedType.SetConst({{const}});
-				qualifiedType.SetQualifierOperator(static_cast<QualifierOperator>({{operator}}));
-				{{/typeID}}
+					QualifiedType qualifiedType;
+					{{#typeID}}
+					qualifiedType.SetTypeID({{typeID}});
+					qualifiedType.SetConst({{const}});
+					qualifiedType.SetQualifierOperator(static_cast<QualifierOperator>({{operator}}));
+					qualifiedType.SetArraySize({{arraySize}});
+					{{/typeID}}
 )"

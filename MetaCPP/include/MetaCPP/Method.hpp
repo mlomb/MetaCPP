@@ -7,10 +7,14 @@
 #include "TypeID.hpp"
 #include "QualifiedName.hpp"
 #include "QualifiedType.hpp"
+
 namespace metacpp {
 	class MethodParameter {
 	public:
 		MethodParameter(const std::string& name, const QualifiedType& type);
+
+		const std::string& GetName() const;
+		const QualifiedType& GetType() const;
 
 	private:
 		std::string m_Name;
