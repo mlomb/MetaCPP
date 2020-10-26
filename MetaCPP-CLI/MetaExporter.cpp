@@ -74,8 +74,8 @@ namespace metacpp {
 		data["name"] = type->m_QualifiedName.GetName();
 		data["hasSize"] = std::to_string(type->HasSize());
 		data["arraySize"] = std::to_string(type->m_ArraySize);
-		data["kind"] = std::to_string(type->m_Kind);
-		data["access"] = std::to_string(type->m_Access);
+		data["kind"] = std::to_string(static_cast<int>(type->m_Kind));
+		data["access"] = std::to_string(static_cast<int>(type->m_Access));
 		data["valid"] = std::to_string(type->IsValid());
 		data["polymorphic"] = std::to_string(type->m_Polymorphic);
 		data["hasDefaultConstructor"] = std::to_string(type->m_HasDefaultConstructor);
@@ -101,7 +101,7 @@ namespace metacpp {
 		for (const BaseType& base : type->m_BaseTypes) {
 			mustache::data baseType;
 			baseType["qualifiedType"] = ExportQualifiedType(base.type);
-			baseType["access"] = std::to_string(base.access);
+			baseType["access"] = std::to_string(static_cast<int>(base.access));
 			baseTypes << baseType;
 		}
 
@@ -147,7 +147,7 @@ namespace metacpp {
 		mustache::data data;
 		data["typeID"] = std::to_string(qtype.m_Type);
 		data["const"] = std::to_string(qtype.m_Const);
-		data["operator"] = std::to_string(qtype.m_Operator);
+		data["operator"] = std::to_string(static_cast<int>(qtype.m_Operator));
 		data["arraySize"] = std::to_string(qtype.m_ArraySize);
 		return data;
 	}
@@ -171,8 +171,8 @@ namespace metacpp {
 			const QualifiedType& qtype = std::get<QualifiedType>(argument);
 			data["typeID"] = std::to_string(qtype.m_Type);
 			data["const"] = std::to_string(qtype.m_Const);
-			data["operator"] = std::to_string(qtype.m_Operator);
-			data["arraySize"] = std::to_string(qtype.m_ArraySize);
+			data["operator"] = std::to_string(static_cast<int>(qtype.m_Operator));
+			data["arraySize"] = std::to_string(static_cast<int>(qtype.m_ArraySize));
 		} else {
 			data["isIntegral"] = std::to_string(true);
 			data["integralValue"] = std::to_string(std::get<unsigned long long>(argument));

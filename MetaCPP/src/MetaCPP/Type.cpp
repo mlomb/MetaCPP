@@ -12,7 +12,9 @@ namespace metacpp {
 			  m_Access(AccessSpecifier::PUBLIC),
 			  m_Polymorphic(false),
 			  m_HasDefaultConstructor(false),
-			  m_Container(0) {
+			  m_HasDefaultDestructor(false),
+			  m_ArraySize(0),
+			  m_Container(NULL) {
 	}
 
 	TypeID Type::GetTypeID() const {

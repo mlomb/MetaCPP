@@ -12,25 +12,25 @@ int main() {
 
 	Player* player = new Player();
 	player->health = 255;
-	player->position = {5, 5};
-	player->velocity = {1, 1};
+	player->position = { 5, 5 };
+	player->velocity = { 1, 1 };
 	player->name = "mlomb";
 
 	Monster* monster = new Monster();
 	monster->health = 255;
-	monster->position = {10, 10};
-	monster->velocity = {-1, -1};
+	monster->position = { 10, 10 };
+	monster->velocity = { -1, -1 };
 	monster->scary_factor = 42.123;
 
 	Map map;
-	map.entities = {player, monster};
+	map.entities = { player, monster };
 
 	map.magic_numbers = { 4, 2 };
 
 	map.map = {
-			{1, 2, 3},
-			{4, 5, 6},
-			{7, 8, 9},
+			{ 1, 2, 3 },
+			{ 4, 5, 6 },
+			{ 7, 8, 9 },
 	};
 
 	metacpp::JsonSerializer serializer = metacpp::JsonSerializer(storage);

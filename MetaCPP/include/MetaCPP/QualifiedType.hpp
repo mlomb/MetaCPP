@@ -10,7 +10,7 @@
 namespace metacpp {
 	class Storage;
 
-	enum QualifierOperator {
+	enum class QualifierOperator {
 		POINTER,
 		REFERENCE,
 		VALUE

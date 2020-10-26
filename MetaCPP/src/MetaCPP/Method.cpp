@@ -14,7 +14,7 @@ namespace metacpp {
 	}
 
 	Method::Method(const QualifiedName& qName)
-			: m_QualifiedName(qName), m_Owner(0) {
+			: m_QualifiedName(qName), m_Owner(0), m_Static(false), m_Virtual(false) {
 	}
 
 	TypeID Method::GetOwnerType() const {

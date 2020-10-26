@@ -13,13 +13,13 @@
 #include "Container.hpp"
 
 namespace metacpp {
-	enum TypeKind {
+	enum class TypeKind {
 		PRIMITIVE,
 		CLASS,
 		STRUCT
 	};
 
-	enum AccessSpecifier {
+	enum class AccessSpecifier {
 		PUBLIC,
 		PROTECTED,
 		PRIVATE

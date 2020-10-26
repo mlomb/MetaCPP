@@ -20,8 +20,9 @@ namespace metacpp {
 
 		const TypeID id = type->GetTypeID();
 
-#define FIELD_SET(set_func, t) \
-        else if (id == TypeInfo< t >::ID) value.set_func(*reinterpret_cast< const t* >(ptr))
+		#define FIELD_SET(set_func, t) \
+        else if (id == TypeInfo< t >::ID) \
+			value.set_func(*reinterpret_cast< const t* >(ptr))
 
 		if (false) {}
 		FIELD_SET(SetBool, bool);
@@ -107,8 +108,7 @@ namespace metacpp {
 								if (IsBasicType(elemType)) {
 									subArray.PushBack(SerializeBasicType(elemType, addr, context), context.document->GetAllocator());
 								} else {
-									subArray.PushBack(SerializeObject(elemType, addr, false, pointer_recursion, context),
-									                  context.document->GetAllocator());
+									subArray.PushBack(SerializeObject(elemType, addr, false, pointer_recursion, context), context.document->GetAllocator());
 								}
 							}
 							return subArray;
@@ -125,7 +125,8 @@ namespace metacpp {
 						auto derived = context.serializer->GetStorage()->ResolveDerivedType(type, pointee);
 						return SerializeObject(derived.first, derived.second, true, pointer_recursion + 1, context);
 					}
-				}
+				} else
+					return Value();
 			}
 			default:
 				// not supported
@@ -258,8 +259,9 @@ namespace metacpp {
 	}
 
 	void JsonSerializer::DeSerializeBasicType(const TypeID id, const Value& value, void* ptr) {
-#define FIELD_GET(is_func, t, get_func) \
-        else if (value.is_func() && id == TypeInfo< t >::ID) *reinterpret_cast<t*>(ptr) = value.get_func()
+		#define FIELD_GET(is_func, t, get_func) \
+        else if (value.is_func() && id == TypeInfo< t >::ID) \
+			*reinterpret_cast<t*>(ptr) = value.get_func()
 
 		if (false) {}
 		FIELD_GET(IsBool, bool, GetBool);
@@ -367,7 +369,7 @@ namespace metacpp {
 	                                      const QualifiedType& item_qtype, const Type* item_type) {
 		for (const Value& item : value.GetArray()) {
 			switch (item_qtype.GetQualifierOperator()) {
-				case VALUE: {
+				case QualifierOperator::VALUE: {
 					void* temp_item_ptr = item_type->Allocate();
 
 					DeSerializeType(item_qtype, item, temp_item_ptr, context);
@@ -377,14 +379,14 @@ namespace metacpp {
 					item_type->Delete(temp_item_ptr);
 					break;
 				}
-				case POINTER: {
+				case QualifierOperator::POINTER: {
 					void* holder = 0;
 					DeSerializePointer(item_type, item, &holder, context);
 
 					sc->PushBack(obj, &holder);
 					break;
 				}
-				case REFERENCE: {
+				case QualifierOperator::REFERENCE: {
 					assert(false);
 					break;
 				}
