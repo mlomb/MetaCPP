@@ -1,8 +1,6 @@
 #ifndef METACPP_SEQUENTIAL_CONTAINER_HPP
 #define METACPP_SEQUENTIAL_CONTAINER_HPP
 
-#include <cassert>
-
 #include "QualifiedType.hpp"
 #include "Container.hpp"
 

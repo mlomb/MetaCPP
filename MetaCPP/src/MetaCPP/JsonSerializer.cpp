@@ -55,41 +55,42 @@ namespace metacpp {
 
 		switch (qtype.GetQualifierOperator()) {
 			case QualifierOperator::VALUE:
-				assert(qtype.GetArraySize() == 1);
-				if (type->GetArraySize() == 1) {
-					if (IsBasicType(type)) {
-						return SerializeBasicType(type, ptr, context);
+				if(qtype.GetArraySize() == 1) {
+					if (type->GetArraySize() == 1) {
+						if (IsBasicType(type)) {
+							return SerializeBasicType(type, ptr, context);
+						} else {
+							return SerializeObject(type, ptr, false, pointer_recursion, context);
+						}
 					} else {
-						return SerializeObject(type, ptr, false, pointer_recursion, context);
+						Value array;
+						array.SetArray();
+						auto elemName = type->GetQualifiedName().ElementTypeQualified();
+						auto elemType = m_Storage->GetType(elemName);
+						QualifiedType elemQType = QualifiedType(elemType->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
+						for (size_t index = 0; index < type->GetArraySize(); ++index) {
+							char* addr = (char*) ptr + elemType->GetSize() * index;
+							array.PushBack(SerializeType(elemQType, addr, pointer_recursion, context), context.document->GetAllocator());
+						}
+						return array;
 					}
-				} else {
-					Value array;
-					array.SetArray();
-					auto elemName = type->GetQualifiedName().ElementTypeQualified();
-					auto elemType = m_Storage->GetType(elemName);
-					QualifiedType elemQType = QualifiedType(elemType->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
-					for (size_t index = 0; index < type->GetArraySize(); ++index) {
-						char* addr = (char*) ptr + elemType->GetSize() * index;
-						array.PushBack(SerializeType(elemQType, addr, pointer_recursion, context), context.document->GetAllocator());
-					}
-					return array;
 				}
+				return Value();
 			case QualifierOperator::POINTER: {
-				assert(qtype.GetArraySize() == 1);
-				assert(type->GetArraySize() == 1); // TODO: support array of pointers, maybe?
-				void* pointee = *((void**) ptr);
-				if (pointee != 0) {
-					if (IsBasicType(type))
-						return SerializeBasicType(type, pointee, context);
-					else {
-						auto derived = context.serializer->GetStorage()->ResolveDerivedType(type, pointee);
-						return SerializeObject(derived.first, derived.second, true, pointer_recursion + 1, context);
+				if(qtype.GetArraySize() == 1 && type->GetArraySize() == 1) {
+					void* pointee = *((void**) ptr);
+					if (pointee != 0) {
+						if (IsBasicType(type))
+							return SerializeBasicType(type, pointee, context);
+						else {
+							auto derived = context.serializer->GetStorage()->ResolveDerivedType(type, pointee);
+							return SerializeObject(derived.first, derived.second, true, pointer_recursion + 1, context);
+						}
 					}
 				}
 				return Value();
 			}
 			case QualifierOperator::ARRAY: {
-				assert(qtype.GetArraySize() > 1);
 				Value array;
 				array.SetArray();
 				QualifiedType elemQType = QualifiedType(type->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
@@ -284,27 +285,27 @@ namespace metacpp {
 
 		switch (qtype.GetQualifierOperator()) {
 			case QualifierOperator::VALUE: {
-				assert(qtype.GetArraySize() == 1);
-				if (type->GetArraySize() == 1) {
-					DeSerializeValue(value, obj, context, type, id);
-				} else {
-					auto elemName = type->GetQualifiedName().ElementTypeQualified();
-					auto elemType = m_Storage->GetType(elemName);
-					QualifiedType elemQType = QualifiedType(elemType->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
-					for (size_t index = 0; index < type->GetArraySize(); ++index) {
-						char* addr = (char*) obj + elemType->GetSize() * index;
-						DeSerializeType(elemQType, value[index], addr, context);
+				if(qtype.GetArraySize() == 1) {
+					if (type->GetArraySize() == 1) {
+						DeSerializeValue(value, obj, context, type, id);
+					} else {
+						auto elemName = type->GetQualifiedName().ElementTypeQualified();
+						auto elemType = m_Storage->GetType(elemName);
+						QualifiedType elemQType = QualifiedType(elemType->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
+						for (size_t index = 0; index < type->GetArraySize(); ++index) {
+							char* addr = (char*) obj + elemType->GetSize() * index;
+							DeSerializeType(elemQType, value[index], addr, context);
+						}
 					}
 				}
 				break;
 			}
 			case QualifierOperator::POINTER:
-				assert(qtype.GetArraySize() == 1);
-				assert(type->GetArraySize() == 1); // TODO: support array of pointers, maybe?
-				DeSerializePointer(type, value, obj, context);
+				if(qtype.GetArraySize() == 1 && type->GetArraySize() == 1) {
+					DeSerializePointer(type, value, obj, context);
+				}
 				break;
 			case QualifierOperator::ARRAY: {
-				assert(qtype.GetArraySize() > 1);
 				QualifiedType elemQType = QualifiedType(type->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
 				for (size_t index = 0; index < qtype.GetArraySize(); ++index) {
 					char* addr = (char*) obj + type->GetSize() * index;
@@ -360,7 +361,6 @@ namespace metacpp {
 					break;
 				}
 				case QualifierOperator::REFERENCE: {
-					assert(false);
 					break;
 				}
 			}

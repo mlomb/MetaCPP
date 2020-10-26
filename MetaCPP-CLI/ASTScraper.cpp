@@ -181,14 +181,14 @@ namespace metacpp {
 //              cType->dump();
 				return 0;
 			case clang::Type::TypeClass::ConstantArray: {
-				assert(arraySize == 1); // I do not know what to do in this case just yet. Check if this happens for int var[2][2][2] or something.
-
-				if (auto arrayType = clang::dyn_cast<clang::ConstantArrayType>(cType)) {
-					auto elemType = arrayType->getElementType();
-					auto elemArraySize = arrayType->getSize().getLimitedValue();
-					auto typeId = ResolveQualType(elemType, elemArraySize).GetTypeID();
-					if (m_Storage->HasType(typeId)) {
-						return m_Storage->GetType(typeId);
+				if(arraySize == 1) {
+					if (auto arrayType = clang::dyn_cast<clang::ConstantArrayType>(cType)) {
+						auto elemType = arrayType->getElementType();
+						auto elemArraySize = arrayType->getSize().getLimitedValue();
+						auto typeId = ResolveQualType(elemType, elemArraySize).GetTypeID();
+						if (m_Storage->HasType(typeId)) {
+							return m_Storage->GetType(typeId);
+						}
 					}
 				}
 				std::cout << "[Failed to scrape ConstantArray]" << std::endl;
