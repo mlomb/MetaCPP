@@ -25,10 +25,7 @@ int main() {
 	Map map;
 	map.entities = {player, monster};
 
-	map.magic_numbers[0][0] = 5;
-	map.magic_numbers[0][1] = 7;
-	map.magic_numbers[1][0] = 1;
-	map.magic_numbers[1][1] = 3;
+	map.magic_numbers = { 4, 2 };
 
 	map.map = {
 			{1, 2, 3},

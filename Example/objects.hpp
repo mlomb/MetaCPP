@@ -34,7 +34,7 @@ public:
 
 class Map {
 public:
-	char magic_numbers[2][2];
+	std::vector<int> magic_numbers;
 	std::vector<std::vector<int>> map;
 	//std::vector<Entity*> entities;
 	std::array<Entity*, 16> entities;
