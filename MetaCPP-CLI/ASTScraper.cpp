@@ -181,7 +181,7 @@ namespace metacpp {
 //              cType->dump();
 				return 0;
 			case clang::Type::TypeClass::ConstantArray: {
-				assert(arraySize == 1); // I do not know what to do in this case yet
+				assert(arraySize == 1); // I do not know what to do in this case just yet. Check if this happens for int var[2][2][2] or something.
 
 				if (auto arrayType = clang::dyn_cast<clang::ConstantArrayType>(cType)) {
 					auto elemType = arrayType->getElementType();
@@ -208,13 +208,13 @@ namespace metacpp {
 			return m_Storage->GetType(typeId);
 
 		metacpp::Type* type = new metacpp::Type(typeId, qualifiedName);
+		m_Storage->AddType(type);
 
 		type->SetArraySize(arraySize);
 		type->SetKind(kind);
 		type->SetHasDefaultConstructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
 		type->SetHasDefaultDestructor(cType->getTypeClass() == clang::Type::TypeClass::Builtin && qualifiedName.GetName() != "void");
 		type->SetPolymorphic(false);
-		m_Storage->AddType(type);
 
 		if (auto cxxRecordDecl = cType->getAsCXXRecordDecl()) {
 			if (cxxRecordDecl->getDeclKind() == clang::Decl::ClassTemplateSpecialization
@@ -311,9 +311,8 @@ namespace metacpp {
 			qualifiedType.SetQualifierOperator(QualifierOperator::POINTER);
 			qualType = ptr->getPointeeType();
 		} else if (auto arr = clang::dyn_cast<clang::ConstantArrayType>(qualType.split().Ty)) {
-			assert(arraySize == 1); // figure this out?
 			qualifiedType.SetArraySize(arr->getSize().getLimitedValue());
-			qualifiedType.SetQualifierOperator(QualifierOperator::VALUE);
+			qualifiedType.SetQualifierOperator(QualifierOperator::ARRAY);
 			qualType = arr->getElementType();
 		} else if (auto ref = clang::dyn_cast<clang::ReferenceType>(qualType.split().Ty)) {
 			qualifiedType.SetQualifierOperator(QualifierOperator::REFERENCE);

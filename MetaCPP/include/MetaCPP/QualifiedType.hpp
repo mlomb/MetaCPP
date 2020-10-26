@@ -13,12 +13,14 @@ namespace metacpp {
 	enum class QualifierOperator {
 		POINTER,
 		REFERENCE,
-		VALUE
+		VALUE,
+		ARRAY
 	};
 
 	class QualifiedType {
 	public:
 		QualifiedType();
+		QualifiedType(TypeID typeID, QualifierOperator qualifierOperator, bool is_const, size_t arraySize);
 
 		void SetTypeID(const TypeID typeID);
 		void SetQualifierOperator(const QualifierOperator qualifierOperator);

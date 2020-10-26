@@ -55,68 +55,28 @@ namespace metacpp {
 
 		switch (qtype.GetQualifierOperator()) {
 			case QualifierOperator::VALUE:
-				if (qtype.GetArraySize() == 1) {
-					if (type->GetArraySize() == 1) {
-						if (IsBasicType(type)) {
-							return SerializeBasicType(type, ptr, context);
-						} else {
-							return SerializeObject(type, ptr, false, pointer_recursion, context);
-						}
+				assert(qtype.GetArraySize() == 1);
+				if (type->GetArraySize() == 1) {
+					if (IsBasicType(type)) {
+						return SerializeBasicType(type, ptr, context);
 					} else {
-						Value array;
-						array.SetArray();
-						auto elemName = QualifiedName(type->GetQualifiedName().GetNamespace(), type->GetQualifiedName().GetName(), type->GetQualifiedName().GetTemplateArgs(), "");
-						auto elemType = m_Storage->GetType(elemName.FullQualified());
-						for (size_t index = 0; index < type->GetArraySize(); ++index) {
-							char* addr = (char*) ptr + elemType->GetSize() * index;
-							if (IsBasicType(type)) {
-								array.PushBack(SerializeBasicType(elemType, addr, context), context.document->GetAllocator());
-							} else {
-								array.PushBack(SerializeObject(elemType, addr, false, pointer_recursion, context),
-								               context.document->GetAllocator());
-							}
-						}
-						return array;
+						return SerializeObject(type, ptr, false, pointer_recursion, context);
 					}
-
 				} else {
-					if (type->GetArraySize() == 1) {
-						Value subArray;
-						subArray.SetArray();
-						for (size_t index = 0; index < qtype.GetArraySize(); ++index) {
-							// std::cout << "!!Serialization subArray size: " << type->GetArraySize() << std::endl;
-							char* addr = (char*) ptr + type->GetSize() * index;
-							if (IsBasicType(type)) {
-								subArray.PushBack(SerializeBasicType(type, addr, context), context.document->GetAllocator());
-							} else {
-								subArray.PushBack(SerializeObject(type, addr, false, pointer_recursion, context),
-								                  context.document->GetAllocator());
-							}
-						}
-						return subArray;
-					} else {
-						Value array;
-						array.SetArray();
-						auto elemName = QualifiedName(type->GetQualifiedName().GetNamespace(), type->GetQualifiedName().GetName(), type->GetQualifiedName().GetTemplateArgs(), "");
-						auto elemType = m_Storage->GetType(elemName.FullQualified());
-						for (size_t qindex = 0; qindex < qtype.GetArraySize(); ++qindex) {
-							Value subArray;
-							subArray.SetArray();
-							for (size_t index = 0; index < type->GetArraySize(); ++index) {
-								// std::cout << "!Serialization subArray size: " << type->GetArraySize() << std::endl;
-								char* addr = (char*) ptr + elemType->GetSize() * (index + qindex * type->GetArraySize());
-								if (IsBasicType(elemType)) {
-									subArray.PushBack(SerializeBasicType(elemType, addr, context), context.document->GetAllocator());
-								} else {
-									subArray.PushBack(SerializeObject(elemType, addr, false, pointer_recursion, context), context.document->GetAllocator());
-								}
-							}
-							return subArray;
-						}
-						return array;
+					Value array;
+					array.SetArray();
+					auto elemName = type->GetQualifiedName().ElementTypeQualified();
+					auto elemType = m_Storage->GetType(elemName);
+					QualifiedType elemQType = QualifiedType(elemType->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
+					for (size_t index = 0; index < type->GetArraySize(); ++index) {
+						char* addr = (char*) ptr + elemType->GetSize() * index;
+						array.PushBack(SerializeType(elemQType, addr, pointer_recursion, context), context.document->GetAllocator());
 					}
+					return array;
 				}
 			case QualifierOperator::POINTER: {
+				assert(qtype.GetArraySize() == 1);
+				assert(type->GetArraySize() == 1); // TODO: support array of pointers, maybe?
 				void* pointee = *((void**) ptr);
 				if (pointee != 0) {
 					if (IsBasicType(type))
@@ -125,8 +85,19 @@ namespace metacpp {
 						auto derived = context.serializer->GetStorage()->ResolveDerivedType(type, pointee);
 						return SerializeObject(derived.first, derived.second, true, pointer_recursion + 1, context);
 					}
-				} else
-					return Value();
+				}
+				return Value();
+			}
+			case QualifierOperator::ARRAY: {
+				assert(qtype.GetArraySize() > 1);
+				Value array;
+				array.SetArray();
+				QualifiedType elemQType = QualifiedType(type->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
+				for (size_t index = 0; index < qtype.GetArraySize(); ++index) {
+					char* addr = (char*) ptr + type->GetSize() * index;
+					array.PushBack(SerializeType(elemQType, addr, pointer_recursion, context), context.document->GetAllocator());
+				}
+				return array;
 			}
 			default:
 				// not supported
@@ -190,29 +161,12 @@ namespace metacpp {
 		for (const Field& field : fields) {
 			const QualifiedType& field_qtype = field.GetType();
 
-			if (field.GetType().GetArraySize() == 1) {
-				void* field_ptr = field.Get<void>(ptr);
-				Value field_value = SerializeType(field_qtype, field_ptr, pointer_recursion, context);
+			void* field_ptr = field.Get<void>(ptr);
+			Value field_value = SerializeType(field_qtype, field_ptr, pointer_recursion, context);
 
-				if (!field_value.IsNull()) {
-					Value field_name(field.GetQualifiedName().GetName().c_str(), context.document->GetAllocator());
-					object.AddMember(field_name, field_value, context.document->GetAllocator());
-				}
-			} else {
-				Value arrayObject;
-				arrayObject.SetArray();
-				const Type* elemType = context.serializer->GetStorage()->GetType(field.GetType().GetTypeID());
-				char* baseAddress = field.Get<char>(ptr);
-				for (std::size_t index = 0; index < field.GetType().GetArraySize(); ++index) {
-					void* field_ptr = baseAddress + elemType->GetSize() * index;
-					Value field_value = SerializeType(field_qtype, field_ptr, pointer_recursion, context);
-
-					if (!field_value.IsNull()) {
-						arrayObject.PushBack(field_value, context.document->GetAllocator());
-					}
-				}
+			if (!field_value.IsNull()) {
 				Value field_name(field.GetQualifiedName().GetName().c_str(), context.document->GetAllocator());
-				object.AddMember(field_name, arrayObject, context.document->GetAllocator());
+				object.AddMember(field_name, field_value, context.document->GetAllocator());
 			}
 		}
 
@@ -329,17 +283,35 @@ namespace metacpp {
 		TypeID id = type->GetTypeID();
 
 		switch (qtype.GetQualifierOperator()) {
-			case QualifierOperator::VALUE:
-				if (qtype.GetArraySize() == 1) {
+			case QualifierOperator::VALUE: {
+				assert(qtype.GetArraySize() == 1);
+				if (type->GetArraySize() == 1) {
 					DeSerializeValue(value, obj, context, type, id);
 				} else {
-					for (size_t index = 0; index < qtype.GetArraySize(); ++index)
-						DeSerializeValue(value[index], reinterpret_cast<void*>(reinterpret_cast<char*>(obj) + type->GetSize() * index), context, type, id);
+					auto elemName = type->GetQualifiedName().ElementTypeQualified();
+					auto elemType = m_Storage->GetType(elemName);
+					QualifiedType elemQType = QualifiedType(elemType->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
+					for (size_t index = 0; index < type->GetArraySize(); ++index) {
+						char* addr = (char*) obj + elemType->GetSize() * index;
+						DeSerializeType(elemQType, value[index], addr, context);
+					}
 				}
 				break;
+			}
 			case QualifierOperator::POINTER:
+				assert(qtype.GetArraySize() == 1);
+				assert(type->GetArraySize() == 1); // TODO: support array of pointers, maybe?
 				DeSerializePointer(type, value, obj, context);
 				break;
+			case QualifierOperator::ARRAY: {
+				assert(qtype.GetArraySize() > 1);
+				QualifiedType elemQType = QualifiedType(type->GetTypeID(), QualifierOperator::VALUE, qtype.IsConst(), 1);
+				for (size_t index = 0; index < qtype.GetArraySize(); ++index) {
+					char* addr = (char*) obj + type->GetSize() * index;
+					DeSerializeType(elemQType, value[index], addr, context);
+				}
+				break;
+			}
 			default:
 				// unsupported
 				break;
@@ -369,7 +341,8 @@ namespace metacpp {
 	                                      const QualifiedType& item_qtype, const Type* item_type) {
 		for (const Value& item : value.GetArray()) {
 			switch (item_qtype.GetQualifierOperator()) {
-				case QualifierOperator::VALUE: {
+				case QualifierOperator::VALUE:
+				case QualifierOperator::ARRAY: {
 					void* temp_item_ptr = item_type->Allocate();
 
 					DeSerializeType(item_qtype, item, temp_item_ptr, context);

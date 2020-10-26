@@ -6,7 +6,7 @@
 
 namespace metacpp {
 	QualifiedName::QualifiedName()
-			: m_Namespace({}), m_Name(""), m_TemplateArgs("") {
+			: m_Namespace({}), m_Name(""), m_TemplateArgs(""), m_ArraySize("") {
 	}
 
 	QualifiedName::QualifiedName(const Namespace& namespace_, const std::string& name, const std::string& templateArgs, const std::string& arraySize)
@@ -117,6 +117,19 @@ namespace metacpp {
 			ss << " " << name;
 			if (!m_ArraySize.empty())
 				ss << "[" << m_ArraySize << "]";
+		} else
+			ss.seekp(-2, std::ios_base::end);
+		return ss.str();
+	}
+
+	std::string QualifiedName::ElementTypeQualified() const {
+		std::stringstream ss;
+		for (const std::string& s : m_Namespace)
+			ss << s << "::";
+		if (!m_Name.empty()) {
+			ss << m_Name;
+			if (!m_TemplateArgs.empty())
+				ss << "<" << m_TemplateArgs << ">";
 		} else
 			ss.seekp(-2, std::ios_base::end);
 		return ss.str();

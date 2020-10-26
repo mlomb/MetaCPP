@@ -18,6 +18,7 @@ namespace metacpp {
 		std::string GetTemplateArgs() const;
 		std::string GetTemplatedName() const;
 		std::string FullQualified() const;
+		std::string ElementTypeQualified() const;
 		std::string MemberQualified(const std::string& name) const;
 		const Namespace& GetNamespace() const;
 
